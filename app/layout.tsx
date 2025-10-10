@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import { Manrope } from 'next/font/google'
 import { SWRConfig } from 'swr'
 import { ThemeProvider } from '@/app/api/theme-provider'
+import { Header } from '@/components/header'
+import { DockBox } from '@/components/dock'
 
 export const metadata: Metadata = {
   title: 'Next.js SaaS Starter',
@@ -30,7 +32,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <Header />
+            <div className="container mx-auto p-3">{children}</div>
+            <DockBox/>
           </ThemeProvider>
         </SWRConfig>
       </body>
