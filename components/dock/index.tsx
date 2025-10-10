@@ -63,14 +63,14 @@ const Icons = {
 
 const DATA = {
   navbar: [
-    { href: '#', icon: HomeIcon, label: 'Home' },
-    { href: '#', icon: PencilIcon, label: 'Blog' },
+    { href: '/', icon: HomeIcon, label: 'Home' },
+    { href: '/about', icon: PencilIcon, label: 'About' },
   ],
   contact: {
     social: {
       GitHub: {
         name: 'GitHub',
-        url: '#',
+        url: 'https://github.com/DaybreakAshe/creek',
         icon: Icons.github,
       },
       LinkedIn: {
@@ -130,6 +130,7 @@ export function DockBox() {
                       buttonVariants({ variant: 'ghost', size: 'icon' }),
                       'size-12 rounded-full'
                     )}
+                    target="_blank"
                   >
                     <social.icon className="size-4" />
                   </Link>
