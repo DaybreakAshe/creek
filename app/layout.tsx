@@ -1,25 +1,21 @@
-import "./globals.css";
-import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
-import { SWRConfig } from "swr";
-import { ThemeProvider } from "@/app/api/theme-provider";
+import './globals.css'
+import type { Metadata, Viewport } from 'next'
+import { Manrope } from 'next/font/google'
+import { SWRConfig } from 'swr'
+import { ThemeProvider } from '@/app/api/theme-provider'
 
 export const metadata: Metadata = {
-  title: "Next.js SaaS Starter",
-  description: "Get started quickly with Next.js, Postgres, and Stripe.",
-};
+  title: 'Next.js SaaS Starter',
+  description: 'Get started quickly with Next.js, Postgres, and Stripe.',
+}
 
 export const viewport: Viewport = {
   maximumScale: 1,
-};
+}
 
-const manrope = Manrope({ subsets: ["latin"] });
+const manrope = Manrope({ subsets: ['latin'] })
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
@@ -39,5 +35,5 @@ export default function RootLayout({
         </SWRConfig>
       </body>
     </html>
-  );
+  )
 }
