@@ -5,6 +5,7 @@ import { SWRConfig } from 'swr'
 import { ThemeProvider } from '@/app/api/theme-provider'
 import { Header } from '@/components/header'
 import { DockBox } from '@/components/dock'
+import { InteractiveGridPattern } from '@/components/ui/interactive-grid-pattern'
 
 export const metadata: Metadata = {
   title: 'Creek',
@@ -37,7 +38,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Header />
-            <div className="container mx-auto">{children}</div>
+            <div className="container mx-auto mt-16">{children}</div>
             <DockBox />
           </ThemeProvider>
         </SWRConfig>
