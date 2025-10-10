@@ -7,8 +7,8 @@ import { Header } from '@/components/header'
 import { DockBox } from '@/components/dock'
 
 export const metadata: Metadata = {
-  title: 'Next.js SaaS Starter',
-  description: 'Get started quickly with Next.js, Postgres, and Stripe.',
+  title: 'Creek',
+  description: 'Visuals by Nature, Curated for You',
 }
 
 export const viewport: Viewport = {
@@ -17,11 +17,15 @@ export const viewport: Viewport = {
 
 const manrope = Manrope({ subsets: ['latin'] })
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html
       lang="en"
-      className={`bg-white dark:bg-gray-950 text-black dark:text-white ${manrope.className}`}
+      className={`bg-white text-black dark:bg-gray-950 dark:text-white ${manrope.className}`}
       suppressHydrationWarning
     >
       <body className="min-h-[100dvh]">
@@ -33,8 +37,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             disableTransitionOnChange
           >
             <Header />
-            <div className="container mx-auto p-3">{children}</div>
-            <DockBox/>
+            <div className="container mx-auto">{children}</div>
+            <DockBox />
           </ThemeProvider>
         </SWRConfig>
       </body>
