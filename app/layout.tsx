@@ -2,10 +2,9 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Manrope } from 'next/font/google'
 import { SWRConfig } from 'swr'
-import { ThemeProvider } from '@/app/api/theme-provider'
+import { ThemeProvider } from '@/app/theme-provider'
 import { Header } from '@/components/header'
 import { DockBox } from '@/components/dock'
-import { InteractiveGridPattern } from '@/components/ui/interactive-grid-pattern'
 
 export const metadata: Metadata = {
   title: 'Creek',
@@ -20,9 +19,9 @@ const manrope = Manrope({ subsets: ['latin'] })
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html
       lang="en"
