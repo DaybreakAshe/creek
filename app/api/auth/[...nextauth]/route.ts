@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         // session.user.id = token.sub as string
         // 如果需要在客户端访问 token，可以通过访问 token 字段
-        ;(session as any).accessToken = token.accessToken
+        (session as any).accessToken = token.accessToken
       }
       return session
     },
