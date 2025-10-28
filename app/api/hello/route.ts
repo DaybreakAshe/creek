@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   // 返回一个标准的 Web Response 对象或使用 NextResponse
   return NextResponse.json({
     message: 'Hello World from Next.js App Router API',
+    code: 200,
   })
 }
 

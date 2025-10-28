@@ -1,29 +1,32 @@
-const { MongoClient } = require('mongodb')
+// src/lib/mongodb.ts
+import mongoose from 'mongoose'
 
-const username = encodeURIComponent('daybreakashe_db_user')
-const password = encodeURIComponent('Huang190730@')
-const cluster = 'cluster0'
-const authSource = 'comments'
-const authMechanism = 'SCRAM-SHA-1'
+const MONGODB_URI = process.env.MONGODB_URI as string
 
-let uri = `mongodb+srv://${username}:${password}@${cluster}/?authSource=${authSource}&authMechanism=${authMechanism}`
-
-const client = new MongoClient(uri)
-
-async function run() {
-  try {
-    await client.connect()
-
-    const database = client.db('daybreakashe_db')
-    const users = database.collection('users')
-
-    const cursor = users.find()
-
-    console.log('cursor###', cursor)
-
-    await cursor.forEach((doc: any) => console.dir(doc))
-  } finally {
-    await client.close()
-  }
+if (!MONGODB_URI) {
+  throw new Error(
+    'Please define the MONGODB_URI environment variable inside .env.local'
+  )
 }
-run().catch(console.dir)
+
+/**
+ * 缓存数据库连接，防止热重载时重复连接
+ */
+let cached = (global as any).mongoose
+
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null }
+}
+
+export async function connectToDatabase() {
+  if (cached.conn) {
+    return cached.conn
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => mongoose)
+  }
+
+  cached.conn = await cached.promise
+  return cached.conn
+}
