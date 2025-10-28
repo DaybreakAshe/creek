@@ -22,14 +22,18 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async session({ session, token }) {
-      // 可以在 session 中加入自定义信息
-      if (session.user && token.sub) {
-        // session.user.id = token.sub
+      // 将 JWT token 添加到 session 中
+      if (session.user) {
+        // session.user.id = token.sub as string
+        // 如果需要在客户端访问 token，可以通过访问 token 字段
+        ;(session as any).accessToken = token.accessToken
       }
       return session
     },
-    async jwt({ token, user }) {
-      if (user) {
+    async jwt({ token, user, account }) {
+      // 保存 OAuth 账户信息（包括 access_token）
+      if (account) {
+        token.accessToken = account.access_token
         token.id = user.id
       }
       return token
