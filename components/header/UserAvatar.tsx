@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { UserInfo } from '@/models/User'
+import { UserInfo } from '@/models/user'
 
 interface UserAvatarProps {
   user: UserInfo

@@ -1,7 +1,9 @@
 import NextAuth, { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
+import { connectToDatabase } from '@/lib/mongodb'
+import User from '@/models/user'
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -21,12 +23,37 @@ export const authOptions: NextAuthOptions = {
     error: '/api/auth/error',
   },
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === 'google') {
+        try {
+          // 连接到数据库
+          await connectToDatabase()
+
+          // 准备保存到数据库的用户数据
+          const userData = {
+            id: user.id || user.email,
+            name: user.name,
+            email: user.email,
+            access_token: account.access_token,
+            avatar: user.image || '',
+          }
+
+          // 更新或创建用户
+          await User.findOneAndUpdate({ email: user.email }, userData, {
+            upsert: true,
+            new: true,
+          })
+        } catch (error) {
+          console.error('Error saving user to database:', error)
+          return true // 即使保存失败也允许登录
+        }
+      }
+      return true
+    },
     async session({ session, token }) {
       // 将 JWT token 添加到 session 中
       if (session.user) {
-        // session.user.id = token.sub as string
-        // 如果需要在客户端访问 token，可以通过访问 token 字段
-        (session as any).accessToken = token.accessToken
+        ;(session as any).accessToken = token.accessToken
       }
       return session
     },
@@ -34,7 +61,9 @@ export const authOptions: NextAuthOptions = {
       // 保存 OAuth 账户信息（包括 access_token）
       if (account) {
         token.accessToken = account.access_token
-        token.id = user.id
+        if (user) {
+          token.id = user.id
+        }
       }
       return token
     },

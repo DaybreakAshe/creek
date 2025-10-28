@@ -38,14 +38,12 @@ function ErrorContent({ error }: { readonly error: string | null }) {
   )
 }
 
-export default function AuthErrorPage({
+export default async function AuthErrorPage({
   searchParams,
 }: {
-  readonly searchParams: { error?: string }
+  readonly searchParams: Promise<{ error?: string }>
 }) {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <ErrorContent error={searchParams.error || null} />
-    </Suspense>
-  )
+  const params = await searchParams
+
+  return <ErrorContent error={params.error || null} />
 }
