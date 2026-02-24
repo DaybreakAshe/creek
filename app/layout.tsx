@@ -26,7 +26,7 @@ export default function RootLayout({
       className="bg-white text-black dark:bg-gray-950 dark:text-white"
       suppressHydrationWarning
     >
-      <body className="min-h-[100dvh]">
+      <body className="min-h-[100vh]">
         <ClientSessionProvider>
           <SWRConfig>
             <ThemeProvider
