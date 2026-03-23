@@ -5,7 +5,7 @@ import mongoose from 'mongoose'
 
 // 定义一个简单模型
 const TestSchema = new mongoose.Schema({ name: String })
-const TestModel = mongoose.models.Test || mongoose.model('Test', TestSchema)
+const TestModel = mongoose.model('Test', TestSchema)
 
 export async function GET() {
   try {
