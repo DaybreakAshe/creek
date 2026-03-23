@@ -15,8 +15,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await connectToDatabase()
-    const body = await request.json()
-    const tool = await Tool.create(body)
+    const body = (await request.json()) ?? {}
+    // 避免把前端返回的不可写字段带入创建请求
+    const { _id, createdAt, updatedAt, ...rest } = body
+    const tool = await Tool.create(rest)
     return NextResponse.json(tool, { status: 201 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
