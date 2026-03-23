@@ -5,10 +5,11 @@ import mongoose from 'mongoose'
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    const { id } = await context.params
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid tool id' }, { status: 400 })
     }
     await connectToDatabase()
@@ -16,7 +17,7 @@ export async function PUT(
     // 避免更新请求体里包含不可更新字段，导致 Mongoose 抛错 500
     const { _id, createdAt, updatedAt, ...rest } = body
     const tool = await Tool.findByIdAndUpdate(
-      params.id,
+      id,
       { $set: rest },
       { new: true }
     )
@@ -31,14 +32,15 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    const { id } = await context.params
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid tool id' }, { status: 400 })
     }
     await connectToDatabase()
-    const tool = await Tool.findByIdAndDelete(params.id)
+    const tool = await Tool.findByIdAndDelete(id)
     if (!tool) {
       return NextResponse.json({ error: 'Tool not found' }, { status: 404 })
     }

@@ -3,6 +3,14 @@ import { useState, useEffect } from 'react'
 import { Plus, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { ToolCard } from '@/components/tools/ToolCard'
 import { ToolDialog } from '@/components/tools/ToolDialog'
 import { ToolLink } from '@/models/tool'
@@ -13,6 +21,9 @@ export default function ToolsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTool, setEditingTool] = useState<ToolLink | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const fetchTools = async () => {
     try {
@@ -55,14 +66,25 @@ export default function ToolsPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个工具吗？')) return
+  const handleDeleteRequest = (id: string) => {
+    setPendingDeleteId(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!pendingDeleteId) return
+    const id = pendingDeleteId
+    setDeleting(true)
     try {
       const response = await fetch(`/api/tools/${id}`, { method: 'DELETE' })
       if (!response.ok) throw new Error('Failed to delete tool')
       fetchTools()
+      setDeleteDialogOpen(false)
+      setPendingDeleteId(null)
     } catch (error) {
       console.error('Error deleting tool:', error)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -133,7 +155,7 @@ export default function ToolsPage() {
               key={tool._id}
               tool={tool}
               onEdit={handleEdit}
-              onDelete={handleDelete}
+                  onDelete={handleDeleteRequest}
             />
           ))}
         </div>
@@ -145,6 +167,43 @@ export default function ToolsPage() {
         tool={editingTool}
         onSave={handleSave}
       />
+
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open)
+          if (!open) {
+            setPendingDeleteId(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+            <DialogDescription>
+              删除这个工具后无法恢复。确定要继续吗？
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleting}
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleting}
+              onClick={handleDeleteConfirm}
+            >
+              {deleting ? '删除中...' : '删除'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
