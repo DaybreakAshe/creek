@@ -38,7 +38,25 @@ function ErrorContent({ error }: { readonly error: string | null }) {
   )
 }
 
-export default async function AuthErrorPage({
+export default function AuthErrorPage({
+  searchParams,
+}: {
+  readonly searchParams: Promise<{ error?: string }>
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <p className="text-muted-foreground">加载中...</p>
+        </div>
+      }
+    >
+      <AuthErrorPageContent searchParams={searchParams} />
+    </Suspense>
+  )
+}
+
+async function AuthErrorPageContent({
   searchParams,
 }: {
   readonly searchParams: Promise<{ error?: string }>
