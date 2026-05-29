@@ -24,9 +24,21 @@ export async function connectToDatabase() {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => mongoose)
+    cached.promise = mongoose
+      .connect(MONGODB_URI, {
+        serverSelectionTimeoutMS: 10000,
+      })
+      .then((mongoose) => mongoose)
   }
 
-  cached.conn = await cached.promise
+  try {
+    cached.conn = await cached.promise
+  } catch (error) {
+    // 连接失败后清除缓存，避免 rejected promise 被永久复用
+    cached.promise = null
+    cached.conn = null
+    throw error
+  }
+
   return cached.conn
 }
