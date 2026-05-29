@@ -18,8 +18,8 @@ export const Header = async () => {
           Creek
         </VideoText>
         <div className="flex items-center gap-3">
-          <LanguageSwitcher />
           <AnimatedThemeTogglerIcon />
+          <LanguageSwitcher />
           <UserInfo />
         </div>
       </div>

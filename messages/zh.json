@@ -29,7 +29,11 @@
   "language": {
     "label": "语言",
     "zh": "中文",
-    "en": "English"
+    "en": "English",
+    "short": {
+      "zh": "中",
+      "en": "EN"
+    }
   },
   "theme": {
     "toggle": "切换主题"
