@@ -34,7 +34,7 @@ async function AdminPageContent() {
   const userCount = await User.countDocuments()
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 py-4">
+    <div className="space-y-8 py-4">
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-orange-500">
           <Shield className="size-5" />
@@ -72,7 +72,7 @@ async function AdminPageContent() {
         <h2 className="text-lg font-semibold">快捷入口</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Link
-            href="/tools"
+            href="/admin/tools"
             className="flex items-start gap-4 rounded-xl border p-5 transition-colors hover:bg-muted/50"
           >
             <Wrench className="mt-0.5 size-5 shrink-0 text-orange-500" />
@@ -84,7 +84,10 @@ async function AdminPageContent() {
             </div>
           </Link>
 
-          <div className="flex items-start gap-4 rounded-xl border p-5">
+          <Link
+            href="/admin/users"
+            className="flex items-start gap-4 rounded-xl border p-5 transition-colors hover:bg-muted/50"
+          >
             <Users className="mt-0.5 size-5 shrink-0 text-orange-500" />
             <div>
               <p className="font-medium">注册用户</p>
@@ -92,7 +95,7 @@ async function AdminPageContent() {
                 共 {userCount} 位用户已登录并写入数据库
               </p>
             </div>
-          </div>
+          </Link>
         </div>
       </section>
 
