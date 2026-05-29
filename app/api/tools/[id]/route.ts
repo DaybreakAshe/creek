@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb'
 import { canManageTool } from '@/lib/tool-auth'
 import { requireAuth } from '@/lib/require-auth'
 import { getSessionUserId } from '@/lib/session-user'
+import { apiError } from '@/lib/api-response'
 import Tool from '@/models/tool'
 import mongoose from 'mongoose'
 
@@ -33,17 +34,17 @@ export async function PUT(
 
     const { id } = await context.params
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid tool id' }, { status: 400 })
+      return apiError('invalidToolId', 400)
     }
 
     await connectToDatabase()
     const existing = await Tool.findById(id)
     if (!existing) {
-      return NextResponse.json({ error: 'Tool not found' }, { status: 404 })
+      return apiError('toolNotFound', 404)
     }
 
     if (!canManageTool(existing, getSessionUserId(auth.session))) {
-      return NextResponse.json({ error: '无权限' }, { status: 403 })
+      return apiError('forbidden', 403)
     }
 
     const body = ((await request.json()) ?? {}) as Record<string, unknown>
@@ -56,9 +57,8 @@ export async function PUT(
     )
 
     return NextResponse.json(tool)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '更新工具失败'
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch {
+    return apiError('updateToolFailed', 500)
   }
 }
 
@@ -72,24 +72,23 @@ export async function DELETE(
 
     const { id } = await context.params
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid tool id' }, { status: 400 })
+      return apiError('invalidToolId', 400)
     }
 
     await connectToDatabase()
     const existing = await Tool.findById(id)
     if (!existing) {
-      return NextResponse.json({ error: 'Tool not found' }, { status: 404 })
+      return apiError('toolNotFound', 404)
     }
 
     if (!canManageTool(existing, getSessionUserId(auth.session))) {
-      return NextResponse.json({ error: '无权限' }, { status: 403 })
+      return apiError('forbidden', 403)
     }
 
     await Tool.findByIdAndDelete(id)
 
-    return NextResponse.json({ message: 'Tool deleted successfully' })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '删除工具失败'
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ message: 'ok' })
+  } catch {
+    return apiError('deleteToolFailed', 500)
   }
 }

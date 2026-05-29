@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/mongodb'
 import { requireAdmin } from '@/lib/require-admin'
+import { connectToDatabase } from '@/lib/mongodb'
+import { apiError } from '@/lib/api-response'
 import Tool from '@/models/tool'
 
 export async function GET() {
@@ -12,8 +13,7 @@ export async function GET() {
     const tools = await Tool.find({}).sort({ createdAt: -1 })
 
     return NextResponse.json(tools)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '获取工具列表失败'
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch {
+    return apiError('fetchToolsFailed', 500)
   }
 }

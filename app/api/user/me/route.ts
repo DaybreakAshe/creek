@@ -1,28 +1,30 @@
 import { NextResponse } from 'next/server'
 import { getServerAuthSession } from '@/lib/auth'
 import { connectToDatabase } from '@/lib/mongodb'
+import { getSessionUserId } from '@/lib/session-user'
+import { apiError } from '@/lib/api-response'
 import User, { type PublicUserProfile } from '@/models/user'
 
 export async function GET() {
   try {
     const session = await getServerAuthSession()
+    const sessionUserId = getSessionUserId(session)
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '未登录' }, { status: 401 })
+    if (!sessionUserId) {
+      return apiError('unauthorized', 401)
     }
 
     await connectToDatabase()
-    const user = (await User.findOne({ id: session.user.id })
+    const user = (await User.findOne({ id: sessionUserId })
       .select('id name email avatar lastLoginAt')
       .lean()) as PublicUserProfile | null
 
     if (!user) {
-      return NextResponse.json({ error: '用户不存在' }, { status: 404 })
+      return apiError('userNotFound', 404)
     }
 
     return NextResponse.json(user)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '获取个人信息失败'
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch {
+    return apiError('fetchProfileFailed', 500)
   }
 }

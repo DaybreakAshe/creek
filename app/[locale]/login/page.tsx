@@ -1,10 +1,12 @@
 'use client'
 
-import { signIn, signOut, useSession, getSession } from 'next-auth/react'
+import { signIn, signOut, useSession } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
-const LoginPage = () => {
+export default function LoginPage() {
+  const t = useTranslations('auth')
   const { data: session, status } = useSession()
   const [error, setError] = useState<string | null>(null)
 
@@ -13,7 +15,7 @@ const LoginPage = () => {
       setError(null)
       await signIn('google', { callbackUrl: '/' })
     } catch (err) {
-      setError('登录失败，请稍后重试')
+      setError(t('signInFailed'))
       console.error('Sign in error:', err)
     }
   }
@@ -22,7 +24,7 @@ const LoginPage = () => {
     try {
       await signOut({ callbackUrl: '/login' })
     } catch (err) {
-      setError('登出失败，请稍后重试')
+      setError(t('signOutFailed'))
       console.error('Sign out error:', err)
     }
   }
@@ -33,9 +35,9 @@ const LoginPage = () => {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
         <div className="space-y-4 text-center">
-          <h1 className="text-3xl font-bold">欢迎回来！</h1>
+          <h1 className="text-3xl font-bold">{t('welcomeBack')}</h1>
           <p className="text-muted-foreground">
-            已登录为: {session.user?.email}
+            {t('loggedInAs', { email: session.user?.email ?? '' })}
           </p>
         </div>
 
@@ -45,7 +47,7 @@ const LoginPage = () => {
             disabled={isLoading}
             variant="outline"
           >
-            {isLoading ? '登出中...' : '登出'}
+            {isLoading ? t('signingOut') : t('signOut')}
           </Button>
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
@@ -56,15 +58,13 @@ const LoginPage = () => {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
       <div className="space-y-4 text-center">
-        <h1 className="text-3xl font-bold">登录</h1>
-        <p className="text-muted-foreground">使用你的 Google 账户继续</p>
+        <h1 className="text-3xl font-bold">{t('login')}</h1>
+        <p className="text-muted-foreground">{t('signInHint')}</p>
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
       <Button onClick={handleGoogleSignIn} disabled={isLoading} size="lg">
-        {isLoading ? '登录中...' : '使用 Google 登录'}
+        {isLoading ? t('signingIn') : t('signInWithGoogle')}
       </Button>
     </div>
   )
 }
-
-export default LoginPage

@@ -1,13 +1,22 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Search } from 'lucide-react'
 import { AdminBackLink } from '@/components/admin/AdminBackLink'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { PublicUserProfile } from '@/models/user'
+import { getApiErrorMessage } from '@/lib/api-error'
+import { formatDateTime } from '@/lib/format-date'
+import type { Locale } from '@/i18n/routing'
 
 export default function AdminUsersPage() {
+  const t = useTranslations('admin')
+  const tCommon = useTranslations('common')
+  const tProfile = useTranslations('profile')
+  const tErrors = useTranslations('errors')
+  const locale = useLocale() as Locale
   const [users, setUsers] = useState<PublicUserProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -19,19 +28,25 @@ export default function AdminUsersPage() {
         const response = await fetch('/api/admin/users')
         if (!response.ok) {
           const data = await response.json().catch(() => ({}))
-          throw new Error(data.error || '获取用户列表失败')
+          throw new Error(
+            getApiErrorMessage(tErrors, data.error, 'fetchUsersFailed')
+          )
         }
         const data: PublicUserProfile[] = await response.json()
         setUsers(data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : '获取用户列表失败')
+        setError(
+          err instanceof Error
+            ? err.message
+            : t('fetchUsersFailed')
+        )
       } finally {
         setLoading(false)
       }
     }
 
     fetchUsers()
-  }, [])
+  }, [t, tErrors])
 
   const filteredUsers = users.filter(
     (user) =>
@@ -43,7 +58,7 @@ export default function AdminUsersPage() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-muted-foreground">加载中...</p>
+        <p className="text-muted-foreground">{tCommon('loading')}</p>
       </div>
     )
   }
@@ -62,14 +77,16 @@ export default function AdminUsersPage() {
       <AdminBackLink />
 
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold">注册用户</h1>
-        <p className="text-muted-foreground text-sm">共 {users.length} 位用户</p>
+        <h1 className="text-3xl font-bold">{t('usersTitle')}</h1>
+        <p className="text-muted-foreground text-sm">
+          {t('usersCount', { count: users.length })}
+        </p>
       </div>
 
       <div className="relative">
         <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
-          placeholder="搜索姓名、邮箱、User ID..."
+          placeholder={t('searchUsers')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9"
@@ -79,7 +96,7 @@ export default function AdminUsersPage() {
       {filteredUsers.length === 0 ? (
         <div className="rounded-xl border py-12 text-center">
           <p className="text-muted-foreground">
-            {searchQuery ? '没有找到匹配的用户' : '暂无注册用户'}
+            {searchQuery ? t('noUsersMatch') : t('noUsers')}
           </p>
         </div>
       ) : (
@@ -88,10 +105,10 @@ export default function AdminUsersPage() {
             <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="bg-muted/50 border-b text-left">
-                  <th className="px-4 py-3 font-medium">用户</th>
-                  <th className="px-4 py-3 font-medium">邮箱</th>
-                  <th className="px-4 py-3 font-medium">User ID</th>
-                  <th className="px-4 py-3 font-medium">最近登录</th>
+                  <th className="px-4 py-3 font-medium">{t('userColumn')}</th>
+                  <th className="px-4 py-3 font-medium">{tProfile('email')}</th>
+                  <th className="px-4 py-3 font-medium">{tProfile('userId')}</th>
+                  <th className="px-4 py-3 font-medium">{tProfile('lastLogin')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -114,7 +131,7 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="text-muted-foreground px-4 py-3 whitespace-nowrap">
                       {user.lastLoginAt
-                        ? new Date(user.lastLoginAt).toLocaleString('zh-CN')
+                        ? formatDateTime(user.lastLoginAt, locale)
                         : '-'}
                     </td>
                   </tr>

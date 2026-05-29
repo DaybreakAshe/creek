@@ -5,6 +5,7 @@ import { connectToDatabase } from '@/lib/mongodb'
 import { getSessionUserId, isSessionUser } from '@/lib/session-user'
 import { publicToolsFilter } from '@/lib/tool-auth'
 import { requireAuth } from '@/lib/require-auth'
+import { apiError } from '@/lib/api-response'
 import Tool from '@/models/tool'
 
 const writableFields = [
@@ -36,14 +37,14 @@ export async function GET(request: Request) {
       const sessionUserId = getSessionUserId(session)
 
       if (!sessionUserId) {
-        return NextResponse.json({ error: '未登录' }, { status: 401 })
+        return apiError('unauthorized', 401)
       }
 
       const isSelf = isSessionUser(session, userId)
       const isAdminUser = isAdmin(sessionUserId)
 
       if (!isSelf && !isAdminUser) {
-        return NextResponse.json({ error: '无权限' }, { status: 403 })
+        return apiError('forbidden', 403)
       }
 
       const ownerId = isSelf ? sessionUserId : userId
@@ -54,9 +55,8 @@ export async function GET(request: Request) {
 
     const tools = await Tool.find(publicToolsFilter).sort({ createdAt: -1 })
     return NextResponse.json(tools)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '获取工具列表失败'
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch {
+    return apiError('fetchToolsFailed', 500)
   }
 }
 
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
     const sessionUserId = getSessionUserId(auth.session)
     if (!sessionUserId) {
-      return NextResponse.json({ error: '无法识别用户身份' }, { status: 401 })
+      return apiError('userIdentityUnknown', 401)
     }
 
     await connectToDatabase()
@@ -81,8 +81,7 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json(tool, { status: 201 })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '创建工具失败'
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch {
+    return apiError('createToolFailed', 500)
   }
 }

@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { loadUser, saveUser } from '@/lib/localStorage'
 import { UserInfo as UserInfoType } from '@/models/user'
 import { Button } from '@/components/ui/button'
 import { UserMenu } from '@/components/header/UserMenu'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 
 function toUserInfo(session: NonNullable<ReturnType<typeof useSession>['data']>): UserInfoType {
   return {
@@ -19,6 +20,7 @@ function toUserInfo(session: NonNullable<ReturnType<typeof useSession>['data']>)
 }
 
 export const UserInfo = () => {
+  const t = useTranslations('nav')
   const { data: session, status } = useSession()
   const [user, setUser] = useState<UserInfoType | null>(null)
 
@@ -51,7 +53,7 @@ export const UserInfo = () => {
         <UserMenu user={user} />
       ) : (
         <Link href="/login">
-          <Button variant="outline">Login</Button>
+          <Button variant="outline">{t('login')}</Button>
         </Link>
       )}
     </div>

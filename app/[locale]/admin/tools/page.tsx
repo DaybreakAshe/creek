@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { AdminBackLink } from '@/components/admin/AdminBackLink'
@@ -16,8 +17,15 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ToolLink } from '@/models/tool'
+import { formatDateTime } from '@/lib/format-date'
+import type { Locale } from '@/i18n/routing'
 
 export default function AdminToolsPage() {
+  const t = useTranslations('admin')
+  const tTools = useTranslations('tools')
+  const tCommon = useTranslations('common')
+  const tProfile = useTranslations('profile')
+  const locale = useLocale() as Locale
   const [tools, setTools] = useState<ToolLink[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -112,7 +120,7 @@ export default function AdminToolsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-muted-foreground">加载中...</p>
+        <p className="text-muted-foreground">{tCommon('loading')}</p>
       </div>
     )
   }
@@ -123,21 +131,21 @@ export default function AdminToolsPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold">工具管理</h1>
+          <h1 className="text-3xl font-bold">{t('toolsTitle')}</h1>
           <p className="text-muted-foreground text-sm">
-            共 {tools.length} 个工具
+            {t('toolsCount', { count: tools.length })}
           </p>
         </div>
         <Button onClick={handleAdd}>
           <Plus className="size-4" />
-          添加工具
+          {t('addTool')}
         </Button>
       </div>
 
       <div className="relative">
         <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
-          placeholder="搜索名称、网址、分类..."
+          placeholder={t('searchTools')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9"
@@ -147,12 +155,12 @@ export default function AdminToolsPage() {
       {filteredTools.length === 0 ? (
         <div className="rounded-xl border py-12 text-center">
           <p className="text-muted-foreground mb-4">
-            {searchQuery ? '没有找到匹配的工具' : '还没有添加任何工具'}
+            {searchQuery ? t('noToolsMatch') : t('noTools')}
           </p>
           {!searchQuery && (
             <Button onClick={handleAdd} variant="outline">
               <Plus className="size-4" />
-              添加第一个工具
+              {t('addFirstTool')}
             </Button>
           )}
         </div>
@@ -162,14 +170,14 @@ export default function AdminToolsPage() {
             <table className="w-full min-w-[960px] text-sm">
               <thead>
                 <tr className="bg-muted/50 border-b text-left">
-                  <th className="px-4 py-3 font-medium">名称</th>
-                  <th className="px-4 py-3 font-medium">网址</th>
-                  <th className="px-4 py-3 font-medium">分类</th>
-                  <th className="px-4 py-3 font-medium">公开</th>
-                  <th className="px-4 py-3 font-medium">User ID</th>
-                  <th className="px-4 py-3 font-medium">描述</th>
-                  <th className="px-4 py-3 font-medium">更新时间</th>
-                  <th className="px-4 py-3 text-right font-medium">操作</th>
+                  <th className="px-4 py-3 font-medium">{t('name')}</th>
+                  <th className="px-4 py-3 font-medium">{t('url')}</th>
+                  <th className="px-4 py-3 font-medium">{t('category')}</th>
+                  <th className="px-4 py-3 font-medium">{t('public')}</th>
+                  <th className="px-4 py-3 font-medium">{tProfile('userId')}</th>
+                  <th className="px-4 py-3 font-medium">{t('description')}</th>
+                  <th className="px-4 py-3 font-medium">{t('updatedAt')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -195,7 +203,7 @@ export default function AdminToolsPage() {
                       {tool.category || 'general'}
                     </td>
                     <td className="px-4 py-3">
-                      {tool.isPublic ? '是' : '否'}
+                      {tool.isPublic ? tCommon('yes') : tCommon('no')}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs break-all">
                       {tool.userId || '-'}
@@ -205,7 +213,7 @@ export default function AdminToolsPage() {
                     </td>
                     <td className="text-muted-foreground px-4 py-3 whitespace-nowrap">
                       {tool.updatedAt
-                        ? new Date(tool.updatedAt).toLocaleString('zh-CN')
+                        ? formatDateTime(tool.updatedAt, locale)
                         : '-'}
                     </td>
                     <td className="px-4 py-3">
@@ -213,7 +221,7 @@ export default function AdminToolsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label={`编辑 ${tool.name}`}
+                          aria-label={t('editTool', { name: tool.name })}
                           onClick={() => handleEdit(tool)}
                         >
                           <Pencil className="size-4" />
@@ -221,7 +229,7 @@ export default function AdminToolsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label={`删除 ${tool.name}`}
+                          aria-label={t('deleteTool', { name: tool.name })}
                           onClick={() => handleDeleteRequest(tool._id!)}
                         >
                           <Trash2 className="size-4 text-destructive" />
@@ -252,10 +260,8 @@ export default function AdminToolsPage() {
       >
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
-            <DialogDescription>
-              删除这个工具后无法恢复。确定要继续吗？
-            </DialogDescription>
+            <DialogTitle>{tTools('confirmDeleteTitle')}</DialogTitle>
+            <DialogDescription>{tTools('confirmDeleteDesc')}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
@@ -264,7 +270,7 @@ export default function AdminToolsPage() {
               disabled={deleting}
               onClick={() => setDeleteDialogOpen(false)}
             >
-              取消
+              {tCommon('cancel')}
             </Button>
             <Button
               type="button"
@@ -272,7 +278,7 @@ export default function AdminToolsPage() {
               disabled={deleting}
               onClick={handleDeleteConfirm}
             >
-              {deleting ? '删除中...' : '删除'}
+              {deleting ? tCommon('deleting') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

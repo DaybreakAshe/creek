@@ -1,6 +1,7 @@
 'use client'
 
 import { ExternalLink, Globe, Lock, Pencil, Trash2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ToolLink } from '@/models/tool'
@@ -20,6 +21,8 @@ export function ToolCard({
   onEdit,
   onDelete,
 }: ToolCardProps) {
+  const t = useTranslations('tools')
+
   return (
     <Card className="group hover:border-primary/50 transition-all duration-200 hover:shadow-md">
       <CardContent className="p-4">
@@ -32,12 +35,12 @@ export function ToolCard({
                 (tool.isPublic ? (
                   <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
                     <Globe className="size-3" />
-                    公开
+                    {t('public')}
                   </span>
                 ) : (
                   <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
                     <Lock className="size-3" />
-                    私有
+                    {t('private')}
                   </span>
                 ))}
             </div>

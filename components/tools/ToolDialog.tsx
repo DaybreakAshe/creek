@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,8 @@ export function ToolDialog({
   tool,
   onSave,
 }: ToolDialogProps) {
+  const t = useTranslations('tools')
+  const tCommon = useTranslations('common')
   const [formData, setFormData] = useState<Partial<ToolLink>>({
     name: '',
     url: '',
@@ -60,23 +63,23 @@ export function ToolDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{tool ? '编辑工具' : '添加新工具'}</DialogTitle>
+          <DialogTitle>{tool ? t('editTool') : t('addNewTool')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">名称 *</Label>
+            <Label htmlFor="name">{t('nameLabel')} *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              placeholder="工具名称"
+              placeholder={t('namePlaceholder')}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="url">网址 *</Label>
+            <Label htmlFor="url">{t('urlLabel')} *</Label>
             <Input
               id="url"
               type="url"
@@ -84,42 +87,42 @@ export function ToolDialog({
               onChange={(e) =>
                 setFormData({ ...formData, url: e.target.value })
               }
-              placeholder="https://example.com"
+              placeholder={t('urlPlaceholder')}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">描述</Label>
+            <Label htmlFor="description">{t('descriptionLabel')}</Label>
             <Input
               id="description"
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              placeholder="工具描述"
+              placeholder={t('descriptionPlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="icon">图标 (Emoji)</Label>
+            <Label htmlFor="icon">{t('iconLabel')}</Label>
             <Input
               id="icon"
               value={formData.icon}
               onChange={(e) =>
                 setFormData({ ...formData, icon: e.target.value })
               }
-              placeholder="🔧"
+              placeholder={t('iconPlaceholder')}
               maxLength={2}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="category">分类</Label>
+            <Label htmlFor="category">{t('categoryLabel')}</Label>
             <Input
               id="category"
               value={formData.category}
               onChange={(e) =>
                 setFormData({ ...formData, category: e.target.value })
               }
-              placeholder="general"
+              placeholder={t('categoryPlaceholder')}
             />
           </div>
           <div className="flex items-center gap-2">
@@ -133,7 +136,7 @@ export function ToolDialog({
               className="size-4 rounded border"
             />
             <Label htmlFor="isPublic" className="cursor-pointer">
-              公开（所有人可见）
+              {t('isPublicLabel')}
             </Label>
           </div>
           <DialogFooter>
@@ -142,9 +145,9 @@ export function ToolDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              取消
+              {tCommon('cancel')}
             </Button>
-            <Button type="submit">保存</Button>
+            <Button type="submit">{tCommon('save')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

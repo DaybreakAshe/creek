@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/require-admin'
 import { connectToDatabase } from '@/lib/mongodb'
+import { apiError } from '@/lib/api-response'
 import User, { type PublicUserProfile } from '@/models/user'
 
 export async function GET() {
@@ -15,8 +16,7 @@ export async function GET() {
       .lean()) as unknown as PublicUserProfile[]
 
     return NextResponse.json(users)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '获取用户列表失败'
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch {
+    return apiError('fetchUsersFailed', 500)
   }
 }

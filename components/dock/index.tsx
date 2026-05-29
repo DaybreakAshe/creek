@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import {
   CalendarIcon,
   HomeIcon,
@@ -9,7 +8,8 @@ import {
   PencilIcon,
   Wrench,
 } from 'lucide-react'
-
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from 'components/ui/button'
 import { Separator } from 'components/ui/separator'
@@ -67,45 +67,48 @@ const Icons = {
   ),
 }
 
-const DATA = {
-  navbar: [
-    { href: '/', icon: HomeIcon, label: 'Home' },
-    { href: '/about', icon: PencilIcon, label: 'About' },
-    { href: '/tools', icon: Wrench, label: 'Tools' },
-  ],
-  contact: {
-    social: {
-      GitHub: {
-        name: 'GitHub',
-        url: 'https://github.com/DaybreakAshe/creek',
-        icon: Icons.github,
-      },
-      LinkedIn: {
-        name: 'LinkedIn',
-        url: '#',
-        icon: Icons.linkedin,
-      },
-      X: {
-        name: 'X',
-        url: '#',
-        icon: Icons.x,
-      },
-      email: {
-        name: 'Send Email',
-        url: '#',
-        icon: Icons.email,
-      },
-    },
-  },
-}
-
 export function DockBox() {
+  const t = useTranslations('nav')
+
+  const navbar = [
+    { href: '/' as const, icon: HomeIcon, label: t('home') },
+    { href: '/about' as const, icon: PencilIcon, label: t('about') },
+    { href: '/tools' as const, icon: Wrench, label: t('tools') },
+  ]
+
+  const social = [
+    {
+      key: 'github',
+      name: t('github'),
+      url: 'https://github.com/DaybreakAshe/creek',
+      icon: Icons.github,
+    },
+    {
+      key: 'linkedin',
+      name: t('linkedin'),
+      url: '#',
+      icon: Icons.linkedin,
+    },
+    {
+      key: 'x',
+      name: t('x'),
+      url: '#',
+      icon: Icons.x,
+    },
+    {
+      key: 'email',
+      name: t('sendEmail'),
+      url: '#',
+      icon: Icons.email,
+    },
+  ]
+
   return (
     <footer className="flex shrink-0 justify-center pb-3 pt-2">
       <TooltipProvider>
         <Dock direction="middle">
-          {DATA.navbar.map((item) => (
-            <DockIcon key={item.label}>
+          {navbar.map((item) => (
+            <DockIcon key={item.href}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
@@ -126,24 +129,29 @@ export function DockBox() {
             </DockIcon>
           ))}
           <Separator orientation="vertical" className="h-full" />
-          {Object.entries(DATA.contact.social).map(([name, social]) => (
-            <DockIcon key={name}>
+          {social.map((item) => (
+            <DockIcon key={item.key}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link
-                    href={social.url}
-                    aria-label={social.name}
+                  <a
+                    href={item.url}
+                    aria-label={item.name}
                     className={cn(
                       buttonVariants({ variant: 'ghost', size: 'icon' }),
                       'size-12 rounded-full'
                     )}
-                    target="_blank"
+                    target={item.url.startsWith('http') ? '_blank' : undefined}
+                    rel={
+                      item.url.startsWith('http')
+                        ? 'noopener noreferrer'
+                        : undefined
+                    }
                   >
-                    <social.icon className="size-4" />
-                  </Link>
+                    <item.icon className="size-4" />
+                  </a>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{name}</p>
+                  <p>{item.name}</p>
                 </TooltipContent>
               </Tooltip>
             </DockIcon>

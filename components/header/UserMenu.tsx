@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { signOut, useSession } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { LogOut, Shield, User } from 'lucide-react'
 import { UserInfo } from '@/models/user'
 import { removeUser } from '@/lib/localStorage'
 import { UserAvatar } from '@/components/header/UserAvatar'
 import { Button } from '@/components/ui/button'
+import { Link } from '@/i18n/navigation'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ interface UserMenuProps {
 }
 
 export const UserMenu = ({ user }: UserMenuProps) => {
+  const t = useTranslations('auth')
   const { data: session } = useSession()
   const [signingOut, setSigningOut] = useState(false)
   const isAdmin = session?.user?.isAdmin ?? false
@@ -46,7 +48,7 @@ export const UserMenu = ({ user }: UserMenuProps) => {
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="打开用户菜单"
+          aria-label={t('openUserMenu')}
           className={cn(
             'size-8 cursor-pointer rounded-full p-0',
             'hover:ring-border hover:ring-2 hover:ring-offset-2 hover:ring-offset-background',
@@ -71,14 +73,14 @@ export const UserMenu = ({ user }: UserMenuProps) => {
           <DropdownMenuItem asChild>
             <Link href="/profile">
               <User />
-              个人信息
+              {t('profile')}
             </Link>
           </DropdownMenuItem>
           {isAdmin && (
             <DropdownMenuItem asChild>
               <Link href="/admin">
                 <Shield />
-                Admin
+                {t('admin')}
               </Link>
             </DropdownMenuItem>
           )}
@@ -96,7 +98,7 @@ export const UserMenu = ({ user }: UserMenuProps) => {
             }}
           >
             <LogOut />
-            {signingOut ? '退出中...' : '退出登录'}
+            {signingOut ? t('signingOut') : t('signOut')}
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

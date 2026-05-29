@@ -1,28 +1,20 @@
-import { Suspense } from 'react'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Shield, Wrench, Users } from 'lucide-react'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import { getServerAuthSession } from '@/lib/auth'
 import { isAdmin } from '@/lib/admin'
 import { connectToDatabase } from '@/lib/mongodb'
 import User, { type UserInfo } from '@/models/user'
 import { Button } from '@/components/ui/button'
+import { formatDateTime } from '@/lib/format-date'
+import type { Locale } from '@/i18n/routing'
 
-export default function AdminPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <p className="text-muted-foreground">加载中...</p>
-        </div>
-      }
-    >
-      <AdminPageContent />
-    </Suspense>
-  )
-}
-
-async function AdminPageContent() {
+export async function AdminPageContent() {
+  const t = await getTranslations('admin')
+  const tCommon = await getTranslations('common')
+  const tProfile = await getTranslations('profile')
+  const locale = (await getLocale()) as Locale
   const session = await getServerAuthSession()
 
   if (!session?.user?.id || !isAdmin(session.user.id)) {
@@ -38,30 +30,32 @@ async function AdminPageContent() {
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-orange-500">
           <Shield className="size-5" />
-          <span className="text-sm font-medium">Admin</span>
+          <span className="text-sm font-medium">{t('label')}</span>
         </div>
-        <h1 className="text-3xl font-bold">管理后台</h1>
+        <h1 className="text-3xl font-bold">{t('dashboard')}</h1>
         <p className="text-muted-foreground">
-          欢迎，{session.user.name ?? session.user.email}
+          {t('welcome', {
+            name: session.user.name ?? session.user.email ?? '',
+          })}
         </p>
       </div>
 
       <section className="space-y-4 rounded-xl border p-6">
-        <h2 className="text-lg font-semibold">当前账户</h2>
+        <h2 className="text-lg font-semibold">{t('currentAccount')}</h2>
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-muted-foreground">User ID</dt>
+            <dt className="text-muted-foreground">{tProfile('userId')}</dt>
             <dd className="mt-1 font-mono break-all">{session.user.id}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">邮箱</dt>
+            <dt className="text-muted-foreground">{tProfile('email')}</dt>
             <dd className="mt-1">{session.user.email}</dd>
           </div>
           {dbUser?.lastLoginAt && (
             <div>
-              <dt className="text-muted-foreground">最近登录</dt>
+              <dt className="text-muted-foreground">{tProfile('lastLogin')}</dt>
               <dd className="mt-1">
-                {new Date(dbUser.lastLoginAt).toLocaleString('zh-CN')}
+                {formatDateTime(dbUser.lastLoginAt, locale)}
               </dd>
             </div>
           )}
@@ -69,7 +63,7 @@ async function AdminPageContent() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">快捷入口</h2>
+        <h2 className="text-lg font-semibold">{t('quickLinks')}</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Link
             href="/admin/tools"
@@ -77,9 +71,9 @@ async function AdminPageContent() {
           >
             <Wrench className="mt-0.5 size-5 shrink-0 text-orange-500" />
             <div>
-              <p className="font-medium">工具管理</p>
+              <p className="font-medium">{t('toolManagement')}</p>
               <p className="text-muted-foreground mt-1 text-sm">
-                管理站点工具链接
+                {t('toolManagementDesc')}
               </p>
             </div>
           </Link>
@@ -90,9 +84,9 @@ async function AdminPageContent() {
           >
             <Users className="mt-0.5 size-5 shrink-0 text-orange-500" />
             <div>
-              <p className="font-medium">注册用户</p>
+              <p className="font-medium">{t('registeredUsers')}</p>
               <p className="text-muted-foreground mt-1 text-sm">
-                共 {userCount} 位用户已登录并写入数据库
+                {t('registeredUsersDesc', { count: userCount })}
               </p>
             </div>
           </Link>
@@ -101,7 +95,7 @@ async function AdminPageContent() {
 
       <div>
         <Button variant="outline" asChild>
-          <Link href="/">返回首页</Link>
+          <Link href="/">{tCommon('backHome')}</Link>
         </Button>
       </div>
     </div>

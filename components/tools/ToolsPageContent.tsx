@@ -1,10 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useLocale, useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { useSession } from 'next-auth/react'
 import { Plus, Search, UserRound } from 'lucide-react'
 import { canManageTool } from '@/lib/tool-auth'
+import { getApiErrorMessage } from '@/lib/api-error'
+import { loginRedirectPath } from '@/lib/locale-path'
+import type { Locale } from '@/i18n/routing'
 import { ToolCard } from '@/components/tools/ToolCard'
 import { ToolDialog } from '@/components/tools/ToolDialog'
 import { Button } from '@/components/ui/button'
@@ -26,6 +30,10 @@ interface ToolsPageContentProps {
 }
 
 export function ToolsPageContent({ scope }: ToolsPageContentProps) {
+  const t = useTranslations('tools')
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
+  const locale = useLocale() as Locale
   const { data: session, status } = useSession()
   const [tools, setTools] = useState<ToolLink[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,12 +57,16 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
       const response = await fetch(url)
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
-        throw new Error(data.error || '获取工具列表失败')
+        throw new Error(
+          getApiErrorMessage(tErrors, data.error, 'fetchToolsFailed')
+        )
       }
       const data = await response.json()
       setTools(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取工具列表失败')
+      setError(
+        err instanceof Error ? err.message : t('fetchFailed')
+      )
     } finally {
       setLoading(false)
     }
@@ -64,7 +76,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
     if (scope === 'mine') {
       if (status === 'loading') return
       if (status === 'unauthenticated') {
-        window.location.href = '/login?callbackUrl=/tools/mine'
+        window.location.href = loginRedirectPath('/tools/mine', locale)
         return
       }
       if (!session?.user?.id) return
@@ -72,7 +84,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
       return
     }
     fetchTools()
-  }, [scope, status, session?.user?.id])
+  }, [scope, status, session?.user?.id, locale])
 
   const handleSave = async (toolData: Partial<ToolLink>) => {
     try {
@@ -85,7 +97,9 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
         })
         if (!response.ok) {
           const data = await response.json().catch(() => ({}))
-          throw new Error(data.error || '更新工具失败')
+          throw new Error(
+            getApiErrorMessage(tErrors, data.error, 'updateToolFailed')
+          )
         }
       } else {
         const response = await fetch('/api/tools', {
@@ -95,13 +109,15 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
         })
         if (!response.ok) {
           const data = await response.json().catch(() => ({}))
-          throw new Error(data.error || '创建工具失败')
+          throw new Error(
+            getApiErrorMessage(tErrors, data.error, 'createToolFailed')
+          )
         }
       }
       fetchTools(scope === 'mine' ? userId : undefined)
       setEditingTool(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '保存失败')
+      setError(err instanceof Error ? err.message : t('saveFailed'))
     }
   }
 
@@ -119,13 +135,15 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
       const response = await fetch(`/api/tools/${id}`, { method: 'DELETE' })
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
-        throw new Error(data.error || '删除工具失败')
+        throw new Error(
+          getApiErrorMessage(tErrors, data.error, 'deleteToolFailed')
+        )
       }
       fetchTools(scope === 'mine' ? userId : undefined)
       setDeleteDialogOpen(false)
       setPendingDeleteId(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '删除失败')
+      setError(err instanceof Error ? err.message : t('deleteFailed'))
     } finally {
       setDeleting(false)
     }
@@ -138,8 +156,10 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
 
   const handleAdd = () => {
     if (status === 'unauthenticated') {
-      window.location.href =
-        scope === 'mine' ? '/login?callbackUrl=/tools/mine' : '/login?callbackUrl=/tools'
+      window.location.href = loginRedirectPath(
+        scope === 'mine' ? '/tools/mine' : '/tools',
+        locale
+      )
       return
     }
     setEditingTool(null)
@@ -156,7 +176,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
   if (loading || (scope === 'mine' && status === 'loading')) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-muted-foreground">加载中...</p>
+        <p className="text-muted-foreground">{tCommon('loading')}</p>
       </div>
     )
   }
@@ -168,37 +188,33 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="mb-2 text-3xl font-bold">
-            {isMine ? '我的工具' : '工具集合'}
+            {isMine ? t('mineTitle') : t('publicTitle')}
           </h1>
           <p className="text-muted-foreground">
-            {isMine
-              ? '管理你创建的工具，可选择是否公开'
-              : '浏览所有人公开分享的工具'}
+            {isMine ? t('mineDesc') : t('publicDesc')}
           </p>
         </div>
         {isMine ? (
           <Button variant="outline" asChild>
-            <Link href="/tools">浏览公开工具</Link>
+            <Link href="/tools">{t('browsePublic')}</Link>
           </Button>
         ) : (
           <Button variant="outline" asChild>
             <Link href="/tools/mine">
               <UserRound className="size-4" />
-              我的工具
+              {t('myTools')}
             </Link>
           </Button>
         )}
       </div>
 
-      {error && (
-        <p className="text-destructive mb-4 text-sm">{error}</p>
-      )}
+      {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
 
       <div className="mb-6 flex gap-3">
         <div className="relative flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
-            placeholder="搜索工具..."
+            placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -207,7 +223,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
         {isMine && (
           <Button onClick={handleAdd}>
             <Plus className="size-4" />
-            添加工具
+            {t('addTool')}
           </Button>
         )}
       </div>
@@ -216,15 +232,15 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
         <div className="py-12 text-center">
           <p className="text-muted-foreground mb-4">
             {searchQuery
-              ? '没有找到匹配的工具'
+              ? t('noMatch')
               : isMine
-                ? '还没有添加任何工具'
-                : '暂无公开工具'}
+                ? t('noMineTools')
+                : t('noPublicTools')}
           </p>
           {isMine && !searchQuery && (
             <Button onClick={handleAdd} variant="outline">
               <Plus className="size-4" />
-              添加第一个工具
+              {t('addFirstTool')}
             </Button>
           )}
         </div>
@@ -262,10 +278,8 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
       >
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
-            <DialogDescription>
-              删除这个工具后无法恢复。确定要继续吗？
-            </DialogDescription>
+            <DialogTitle>{t('confirmDeleteTitle')}</DialogTitle>
+            <DialogDescription>{t('confirmDeleteDesc')}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
@@ -274,7 +288,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
               disabled={deleting}
               onClick={() => setDeleteDialogOpen(false)}
             >
-              取消
+              {tCommon('cancel')}
             </Button>
             <Button
               type="button"
@@ -282,7 +296,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
               disabled={deleting}
               onClick={handleDeleteConfirm}
             >
-              {deleting ? '删除中...' : '删除'}
+              {deleting ? tCommon('deleting') : tCommon('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

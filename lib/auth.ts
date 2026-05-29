@@ -21,7 +21,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: '/login',
-    error: '/api/auth/error',
+    error: '/auth/error',
   },
   callbacks: {
     async signIn({ user, account }) {
