@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { signOut } from 'next-auth/react'
-import { LogOut } from 'lucide-react'
+import Link from 'next/link'
+import { signOut, useSession } from 'next-auth/react'
+import { LogOut, Shield, User } from 'lucide-react'
 import { UserInfo } from '@/models/user'
 import { removeUser } from '@/lib/localStorage'
 import { UserAvatar } from '@/components/header/UserAvatar'
@@ -23,7 +24,9 @@ interface UserMenuProps {
 }
 
 export const UserMenu = ({ user }: UserMenuProps) => {
+  const { data: session } = useSession()
   const [signingOut, setSigningOut] = useState(false)
+  const isAdmin = session?.user?.isAdmin ?? false
 
   const handleSignOut = async () => {
     setSigningOut(true)
@@ -64,8 +67,22 @@ export const UserMenu = ({ user }: UserMenuProps) => {
 
         <DropdownMenuSeparator />
 
-        {/* 后续功能菜单项添加在此 */}
-        <DropdownMenuGroup />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link href="/profile">
+              <User />
+              个人信息
+            </Link>
+          </DropdownMenuItem>
+          {isAdmin && (
+            <DropdownMenuItem asChild>
+              <Link href="/admin">
+                <Shield />
+                Admin
+              </Link>
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 

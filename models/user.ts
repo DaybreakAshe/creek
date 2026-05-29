@@ -9,6 +9,11 @@ export interface UserInfo {
   lastLoginAt?: Date
 }
 
+export type PublicUserProfile = Pick<
+  UserInfo,
+  'id' | 'name' | 'email' | 'avatar' | 'lastLoginAt'
+>
+
 const userSchema = new Schema<UserInfo>(
   {
     id: { type: String, required: true, unique: true },

@@ -3,7 +3,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { UserInfo } from '@/models/user'
 
 interface UserAvatarProps {
-  user: UserInfo
+  user: Pick<UserInfo, 'name' | 'avatar'>
 }
 
 export const UserAvatar: FC<UserAvatarProps> = ({ user }) => {
