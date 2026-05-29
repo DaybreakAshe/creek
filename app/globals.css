@@ -323,3 +323,33 @@
     animation: none;
     mix-blend-mode: normal;
 }
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--foreground) 22%, transparent)
+      transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--foreground) 20%, transparent);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--foreground) 35%, transparent);
+  }
+}
