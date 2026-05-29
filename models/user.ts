@@ -6,6 +6,7 @@ export interface UserInfo {
   email: string
   access_token: string
   avatar: string
+  lastLoginAt?: Date
 }
 
 const userSchema = new Schema<UserInfo>(
@@ -15,6 +16,7 @@ const userSchema = new Schema<UserInfo>(
     email: { type: String, required: true, unique: true },
     access_token: { type: String, required: true },
     avatar: { type: String, default: '' },
+    lastLoginAt: { type: Date },
   },
   { collection: 'users' }
 )

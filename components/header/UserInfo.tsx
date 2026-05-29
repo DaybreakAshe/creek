@@ -10,10 +10,10 @@ import Link from 'next/link'
 
 function toUserInfo(session: NonNullable<ReturnType<typeof useSession>['data']>): UserInfoType {
   return {
-    id: session.user?.email ?? '',
+    id: session.user?.id ?? session.user?.email ?? '',
     name: session.user?.name ?? '',
     email: session.user?.email ?? '',
-    access_token: (session as { accessToken?: string }).accessToken ?? '',
+    access_token: session.accessToken ?? '',
     avatar: session.user?.image ?? '',
   }
 }

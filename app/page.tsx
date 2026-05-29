@@ -1,4 +1,4 @@
 const Page = () => {
-  return <div className="p-3">home</div>
+  return <div className="px-4">home</div>
 }
 export default Page

@@ -6,5 +6,5 @@ interface HelloData {
 }
 
 export default function About() {
-  return <div className="pt-10 pb-52">about</div>
+  return <div className="px-4">about</div>
 }

@@ -114,7 +114,7 @@ export default function ToolsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="px-4">
       <div className="mb-8">
         <h1 className="mb-2 text-3xl font-bold">工具集合</h1>
         <p className="text-muted-foreground">管理你的常用工具和网址</p>
