@@ -21,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <body className="flex h-dvh flex-col overflow-hidden antialiased">
         <ClientSessionProvider>
           <SWRConfig>
             <ThemeProvider
@@ -32,7 +32,9 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               <Header />
-              <div className="container mx-auto">{children}</div>
+              <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                <div className="container mx-auto px-3 py-4">{children}</div>
+              </main>
               <DockBox />
             </ThemeProvider>
           </SWRConfig>
