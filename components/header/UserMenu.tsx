@@ -6,6 +6,7 @@ import { LogOut } from 'lucide-react'
 import { UserInfo } from '@/models/user'
 import { removeUser } from '@/lib/localStorage'
 import { UserAvatar } from '@/components/header/UserAvatar'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,22 +37,24 @@ export const UserMenu = ({ user }: UserMenuProps) => {
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           aria-label="打开用户菜单"
           className={cn(
-            'rounded-full outline-none transition-all',
+            'size-8 cursor-pointer rounded-full p-0',
             'hover:ring-border hover:ring-2 hover:ring-offset-2 hover:ring-offset-background',
             'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:ring-offset-2 focus-visible:ring-offset-background'
           )}
         >
           <UserAvatar user={user} />
-        </button>
+        </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" sideOffset={8} className="z-[100] w-56">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col gap-1">
             <p className="truncate text-sm leading-none font-medium">{user.name}</p>
