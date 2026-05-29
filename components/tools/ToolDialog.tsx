@@ -32,6 +32,7 @@ export function ToolDialog({
     description: '',
     icon: '',
     category: 'general',
+    isPublic: false,
   })
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export function ToolDialog({
         description: '',
         icon: '',
         category: 'general',
+        isPublic: false,
       })
     }
   }, [tool, open])
@@ -119,6 +121,20 @@ export function ToolDialog({
               }
               placeholder="general"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="isPublic"
+              type="checkbox"
+              checked={Boolean(formData.isPublic)}
+              onChange={(e) =>
+                setFormData({ ...formData, isPublic: e.target.checked })
+              }
+              className="size-4 rounded border"
+            />
+            <Label htmlFor="isPublic" className="cursor-pointer">
+              公开（所有人可见）
+            </Label>
           </div>
           <DialogFooter>
             <Button

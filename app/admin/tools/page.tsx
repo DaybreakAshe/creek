@@ -29,7 +29,7 @@ export default function AdminToolsPage() {
 
   const fetchTools = async () => {
     try {
-      const response = await fetch('/api/tools')
+      const response = await fetch('/api/admin/tools')
       if (!response.ok) throw new Error('Failed to fetch tools')
       const data = await response.json()
       setTools(data)
@@ -105,7 +105,8 @@ export default function AdminToolsPage() {
       tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tool.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tool.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      tool.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tool.userId?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   if (loading) {
@@ -158,12 +159,14 @@ export default function AdminToolsPage() {
       ) : (
         <div className="overflow-hidden rounded-xl border">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[960px] text-sm">
               <thead>
                 <tr className="bg-muted/50 border-b text-left">
                   <th className="px-4 py-3 font-medium">名称</th>
                   <th className="px-4 py-3 font-medium">网址</th>
                   <th className="px-4 py-3 font-medium">分类</th>
+                  <th className="px-4 py-3 font-medium">公开</th>
+                  <th className="px-4 py-3 font-medium">User ID</th>
                   <th className="px-4 py-3 font-medium">描述</th>
                   <th className="px-4 py-3 font-medium">更新时间</th>
                   <th className="px-4 py-3 text-right font-medium">操作</th>
@@ -190,6 +193,12 @@ export default function AdminToolsPage() {
                     </td>
                     <td className="text-muted-foreground px-4 py-3">
                       {tool.category || 'general'}
+                    </td>
+                    <td className="px-4 py-3">
+                      {tool.isPublic ? '是' : '否'}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs break-all">
+                      {tool.userId || '-'}
                     </td>
                     <td className="text-muted-foreground max-w-[180px] truncate px-4 py-3">
                       {tool.description || '-'}
