@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import { canManageTool } from '@/lib/tool-auth'
 import { requireAuth } from '@/lib/require-auth'
+import { getSessionUserId } from '@/lib/session-user'
 import Tool from '@/models/tool'
 import mongoose from 'mongoose'
 
@@ -41,7 +42,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Tool not found' }, { status: 404 })
     }
 
-    if (!canManageTool(existing, auth.session.user.id)) {
+    if (!canManageTool(existing, getSessionUserId(auth.session))) {
       return NextResponse.json({ error: '无权限' }, { status: 403 })
     }
 
@@ -80,7 +81,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Tool not found' }, { status: 404 })
     }
 
-    if (!canManageTool(existing, auth.session.user.id)) {
+    if (!canManageTool(existing, getSessionUserId(auth.session))) {
       return NextResponse.json({ error: '无权限' }, { status: 403 })
     }
 

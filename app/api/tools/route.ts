@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerAuthSession } from '@/lib/auth'
 import { isAdmin } from '@/lib/admin'
 import { connectToDatabase } from '@/lib/mongodb'
+import { getSessionUserId, isSessionUser } from '@/lib/session-user'
 import { publicToolsFilter } from '@/lib/tool-auth'
 import { requireAuth } from '@/lib/require-auth'
 import Tool from '@/models/tool'
@@ -32,16 +33,22 @@ export async function GET(request: Request) {
 
     if (userId) {
       const session = await getServerAuthSession()
-      const isSelf = session?.user?.id === userId
-      const isAdminUser = session?.user?.id
-        ? isAdmin(session.user.id)
-        : false
+      const sessionUserId = getSessionUserId(session)
+
+      if (!sessionUserId) {
+        return NextResponse.json({ error: '未登录' }, { status: 401 })
+      }
+
+      const isSelf = isSessionUser(session, userId)
+      const isAdminUser = isAdmin(sessionUserId)
 
       if (!isSelf && !isAdminUser) {
         return NextResponse.json({ error: '无权限' }, { status: 403 })
       }
 
-      const tools = await Tool.find({ userId }).sort({ createdAt: -1 })
+      const ownerId = isSelf ? sessionUserId : userId
+      const tools = await Tool.find({ userId: ownerId }).sort({ createdAt: -1 })
+
       return NextResponse.json(tools)
     }
 
@@ -58,13 +65,18 @@ export async function POST(request: Request) {
     const auth = await requireAuth()
     if (auth.error) return auth.error
 
+    const sessionUserId = getSessionUserId(auth.session)
+    if (!sessionUserId) {
+      return NextResponse.json({ error: '无法识别用户身份' }, { status: 401 })
+    }
+
     await connectToDatabase()
     const body = ((await request.json()) ?? {}) as Record<string, unknown>
     const data = pickWritableFields(body)
 
     const tool = await Tool.create({
       ...data,
-      userId: auth.session.user.id,
+      userId: sessionUserId,
       isPublic: Boolean(data.isPublic),
     })
 

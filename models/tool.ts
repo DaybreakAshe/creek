@@ -29,6 +29,10 @@ const toolSchema = new Schema<ToolLink>(
   }
 )
 
-const Tool = models.Tool || model<ToolLink>('Tool', toolSchema)
+if (models.Tool) {
+  delete mongoose.models.Tool
+}
+
+const Tool = model<ToolLink>('Tool', toolSchema)
 
 export default Tool

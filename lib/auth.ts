@@ -64,6 +64,21 @@ export const authOptions: NextAuthOptions = {
       } else if (user?.id) {
         token.id = user.id
       }
+
+      if (!token.id && token.email) {
+        try {
+          await connectToDatabase()
+          const dbUser = (await User.findOne({ email: token.email })
+            .select('id')
+            .lean()) as { id: string } | null
+          if (dbUser?.id) {
+            token.id = dbUser.id
+          }
+        } catch (error) {
+          console.error('Error resolving user id from database:', error)
+        }
+      }
+
       if (token.id) {
         token.isAdmin = isAdmin(token.id as string)
       }

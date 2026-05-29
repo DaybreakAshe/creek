@@ -11,5 +11,5 @@ export function canManageTool(
 }
 
 export const publicToolsFilter = {
-  $or: [{ isPublic: true }, { isPublic: { $exists: false } }],
+  isPublic: true,
 }
