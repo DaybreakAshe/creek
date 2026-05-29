@@ -1,11 +1,4 @@
-import { BlurFadeDemo } from '@/components/photos/BlurFadeDemo'
-import {HeroParallaxDemo} from '@/components/demo/HeroParallaxDemo'
-
 const Page = () => {
-  return (
-    <div className="p-3">
-      {/* <HeroParallaxDemo /> */}
-    </div>
-  )
+  return <div className="p-3">home</div>
 }
 export default Page
