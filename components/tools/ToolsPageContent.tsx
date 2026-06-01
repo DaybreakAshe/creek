@@ -84,6 +84,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
       return
     }
     fetchTools()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, status, session?.user?.id, locale])
 
   const handleSave = async (toolData: Partial<ToolLink>) => {
