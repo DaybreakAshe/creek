@@ -39,7 +39,38 @@
     "toggle": "切换主题"
   },
   "home": {
-    "title": "首页"
+    "title": "首页",
+    "subtitle": "精选影像与作品，瀑布流展示即将上线",
+    "addWork": "添加作品",
+    "waterfallPlaceholder": "瀑布流展示区开发中，可先上传作品",
+    "loginHint": "上传作品需先",
+    "loginLink": "登录",
+    "gallery": {
+      "dialogTitle": "上传作品",
+      "titleLabel": "标题",
+      "titlePlaceholder": "给作品起个名字",
+      "descriptionLabel": "描述",
+      "descriptionPlaceholder": "简要介绍这张图片或视频…",
+      "typeLabel": "类型",
+      "types": {
+        "image": "图片",
+        "video": "视频",
+        "audio": "音频",
+        "document": "文档"
+      },
+      "mediaLabel": "媒体文件",
+      "altTextLabel": "无障碍说明",
+      "altTextPlaceholder": "用于读屏与 SEO，默认可与标题相同",
+      "tagsLabel": "标签",
+      "tagsPlaceholder": "用逗号分隔，如：风景,旅行",
+      "linkUrlLabel": "外链（可选）",
+      "linkUrlPlaceholder": "https://…",
+      "isPublicLabel": "公开展示",
+      "previewAlt": "预览",
+      "fileRequired": "请选择媒体文件",
+      "uploading": "上传中…",
+      "submit": "上传并保存"
+    }
   },
   "about": {
     "title": "关于"
@@ -175,6 +206,9 @@
     "fileRequired": "请选择要上传的文件",
     "fileTooLarge": "文件过大（最大 10MB）",
     "uploadFailed": "文件上传失败",
+    "titleRequired": "请填写标题",
+    "fetchGalleryFailed": "获取作品列表失败",
+    "createGalleryFailed": "保存作品失败",
     "unknown": "操作失败，请稍后重试"
   }
 }

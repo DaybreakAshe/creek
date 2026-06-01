@@ -1,4 +1,5 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { setRequestLocale } from 'next-intl/server'
+import { HomePageContent } from '@/components/home/HomePageContent'
 
 export default async function HomePage({
   params,
@@ -7,7 +8,6 @@ export default async function HomePage({
 }) {
   const { locale } = await params
   setRequestLocale(locale)
-  const t = await getTranslations('home')
 
-  return <div>{t('title')}</div>
+  return <HomePageContent />
 }

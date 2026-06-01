@@ -39,7 +39,38 @@
     "toggle": "Toggle theme"
   },
   "home": {
-    "title": "Home"
+    "title": "Home",
+    "subtitle": "Curated visuals — masonry gallery coming soon",
+    "addWork": "Add work",
+    "waterfallPlaceholder": "Masonry gallery is in progress — you can upload works now",
+    "loginHint": "Sign in to upload",
+    "loginLink": "Log in",
+    "gallery": {
+      "dialogTitle": "Upload work",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Name your work",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "A short intro for this image or video…",
+      "typeLabel": "Type",
+      "types": {
+        "image": "Image",
+        "video": "Video",
+        "audio": "Audio",
+        "document": "Document"
+      },
+      "mediaLabel": "Media file",
+      "altTextLabel": "Alt text",
+      "altTextPlaceholder": "For accessibility and SEO; defaults to title",
+      "tagsLabel": "Tags",
+      "tagsPlaceholder": "Comma-separated, e.g. landscape, travel",
+      "linkUrlLabel": "External link (optional)",
+      "linkUrlPlaceholder": "https://…",
+      "isPublicLabel": "Show publicly",
+      "previewAlt": "Preview",
+      "fileRequired": "Please select a media file",
+      "uploading": "Uploading…",
+      "submit": "Upload & save"
+    }
   },
   "about": {
     "title": "About"
@@ -175,6 +206,9 @@
     "fileRequired": "Please select a file to upload",
     "fileTooLarge": "File is too large (max 10MB)",
     "uploadFailed": "File upload failed",
+    "titleRequired": "Title is required",
+    "fetchGalleryFailed": "Failed to load gallery",
+    "createGalleryFailed": "Failed to save work",
     "unknown": "Something went wrong. Please try again."
   }
 }

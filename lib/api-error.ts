@@ -22,6 +22,9 @@ export function getApiErrorMessage(
     'fileRequired',
     'fileTooLarge',
     'uploadFailed',
+    'titleRequired',
+    'fetchGalleryFailed',
+    'createGalleryFailed',
   ]
 
   if (knownCodes.includes(code)) {
