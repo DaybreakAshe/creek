@@ -61,6 +61,8 @@
         "document": "文档"
       },
       "mediaLabel": "媒体文件",
+      "mediaHint": "支持图片、视频、音频与文档",
+      "footerHint": "保存后将上传到 Sirv 并公开展示",
       "altTextLabel": "无障碍说明",
       "altTextPlaceholder": "用于读屏与 SEO，默认可与标题相同",
       "tagsLabel": "标签",
