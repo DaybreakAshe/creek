@@ -50,6 +50,9 @@ cp .env.example .env.local
 | `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
 | `MONGODB_URI` | MongoDB 连接字符串 |
 | `ADMIN_USER_ID` | 管理员 User ID（登录后可访问 `/admin`） |
+| `SIRV_CLIENT_ID` | Sirv API Client ID |
+| `SIRV_CLIENT_SECRET` | Sirv API Client Secret |
+| `SIRV_CDN_URL` | Sirv CDN 域名（如 `your-account.sirv.com`） |
 
 Google OAuth 与 NextAuth 的详细配置步骤见 [README_AUTH.md](./README_AUTH.md)。
 

@@ -18,6 +18,10 @@ export function getApiErrorMessage(
     'deleteToolFailed',
     'fetchProfileFailed',
     'fetchUsersFailed',
+    'sirvNotConfigured',
+    'fileRequired',
+    'fileTooLarge',
+    'uploadFailed',
   ]
 
   if (knownCodes.includes(code)) {

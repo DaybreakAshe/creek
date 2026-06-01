@@ -171,6 +171,10 @@
     "deleteToolFailed": "Failed to delete tool",
     "fetchProfileFailed": "Failed to load profile",
     "fetchUsersFailed": "Failed to load users",
+    "sirvNotConfigured": "File storage is not configured",
+    "fileRequired": "Please select a file to upload",
+    "fileTooLarge": "File is too large (max 10MB)",
+    "uploadFailed": "File upload failed",
     "unknown": "Something went wrong. Please try again."
   }
 }

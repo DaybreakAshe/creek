@@ -171,6 +171,10 @@
     "deleteToolFailed": "删除工具失败",
     "fetchProfileFailed": "获取个人信息失败",
     "fetchUsersFailed": "获取用户列表失败",
+    "sirvNotConfigured": "文件存储未配置",
+    "fileRequired": "请选择要上传的文件",
+    "fileTooLarge": "文件过大（最大 10MB）",
+    "uploadFailed": "文件上传失败",
     "unknown": "操作失败，请稍后重试"
   }
 }
