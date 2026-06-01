@@ -17,6 +17,9 @@
   },
   "nav": {
     "mainNav": "主导航",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单",
+    "connect": "联系",
     "home": "首页",
     "about": "关于",
     "tools": "工具",

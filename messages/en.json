@@ -17,6 +17,9 @@
   },
   "nav": {
     "mainNav": "Main navigation",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "connect": "Connect",
     "home": "Home",
     "about": "About",
     "tools": "Tools",

@@ -3,14 +3,14 @@
 import { useLocale, useTranslations } from 'next-intl'
 import { usePathname, useRouter } from '@/i18n/navigation'
 import { routing, type Locale } from '@/i18n/routing'
-import { buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Check, ChevronDown } from 'lucide-react'
+import { Check, ChevronDown, Languages } from 'lucide-react'
+import { headerIconButtonClassName } from '@/components/header/header-actions'
 import { cn } from '@/lib/utils'
 
 export function LanguageSwitcher() {
@@ -31,12 +31,15 @@ export function LanguageSwitcher() {
           type="button"
           aria-label={t('label')}
           className={cn(
-            buttonVariants({ variant: 'ghost', size: 'sm' }),
-            'text-muted-foreground hover:text-foreground h-9 gap-1 px-2.5'
+            headerIconButtonClassName(),
+            'md:w-auto md:min-w-0 md:gap-1 md:px-2.5'
           )}
         >
-          <span className="text-xs font-medium">{t(`short.${locale}`)}</span>
-          <ChevronDown className="size-3.5 opacity-60" />
+          <Languages className="size-4 md:hidden" strokeWidth={1.5} />
+          <span className="hidden text-xs font-medium md:inline">
+            {t(`short.${locale}`)}
+          </span>
+          <ChevronDown className="hidden size-3.5 opacity-60 md:block" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8}>

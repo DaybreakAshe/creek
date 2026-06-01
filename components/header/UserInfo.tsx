@@ -53,7 +53,13 @@ export const UserInfo = () => {
         <UserMenu user={user} />
       ) : (
         <Link href="/login">
-          <Button variant="outline">{t('login')}</Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 px-2.5 text-xs sm:px-3 sm:text-sm"
+          >
+            {t('login')}
+          </Button>
         </Link>
       )}
     </div>

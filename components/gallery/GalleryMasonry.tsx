@@ -26,9 +26,10 @@ async function fetchGallery(): Promise<GalleryItemRecord[]> {
   return data as GalleryItemRecord[]
 }
 
+/** 与 MASONRY_BREAKPOINTS 一致：≤480 一列、≤768 两列、否则三列 */
 function GallerySkeletonGrid() {
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 min-[481px]:grid-cols-2 md:grid-cols-3">
       {Array.from({ length: SKELETON_COUNT }, (_, i) => (
         <Skeleton key={i} className="aspect-[4/3] w-full rounded-xl" />
       ))}
