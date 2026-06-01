@@ -19,6 +19,8 @@ const authMiddleware = withAuth(
       const home = locale === routing.defaultLocale ? '/' : `/${locale}`
       return NextResponse.redirect(new URL(home, req.url))
     }
+
+    return intlMiddleware(req)
   },
   {
     callbacks: {
