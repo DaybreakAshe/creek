@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { canDisplayToolIcon } from '@/lib/tool-icon'
 
 type ToolIconSize = 'sm' | 'md' | 'lg'
+type ToolIconVariant = 'default' | 'plain'
 
 const sizeClasses: Record<
   ToolIconSize,
@@ -16,10 +17,28 @@ const sizeClasses: Record<
   lg: { box: 'size-16 rounded-2xl', icon: 'size-7', image: 'size-16 rounded-2xl' },
 }
 
+const variantClasses: Record<
+  ToolIconVariant,
+  { image: string; fallback: string }
+> = {
+  default: {
+    image: 'bg-muted object-cover ring-1 ring-black/5 dark:ring-white/10',
+    fallback:
+      'bg-muted/80 text-muted-foreground ring-1 ring-black/5 dark:ring-white/10',
+  },
+  plain: {
+    image:
+      'object-contain shadow-sm shadow-black/10 dark:shadow-black/30',
+    fallback: 'bg-transparent text-muted-foreground shadow-none ring-0',
+  },
+}
+
 interface ToolIconProps {
   icon?: string | null
   name?: string
   size?: ToolIconSize
+  /** plain：无底色，适合卡片列表 */
+  variant?: ToolIconVariant
   className?: string
 }
 
@@ -27,20 +46,18 @@ export function ToolIcon({
   icon,
   name = '',
   size = 'md',
+  variant = 'default',
   className,
 }: ToolIconProps) {
   const sizes = sizeClasses[size]
+  const styles = variantClasses[variant]
 
   if (canDisplayToolIcon(icon)) {
     return (
       <img
         src={icon!.trim()}
         alt={name ? `${name} icon` : ''}
-        className={cn(
-          'bg-muted object-cover ring-1 ring-black/5 dark:ring-white/10',
-          sizes.image,
-          className
-        )}
+        className={cn(styles.image, sizes.image, className)}
       />
     )
   }
@@ -48,7 +65,8 @@ export function ToolIcon({
   return (
     <div
       className={cn(
-        'bg-muted/80 text-muted-foreground flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10',
+        'flex items-center justify-center',
+        styles.fallback,
         sizes.box,
         className
       )}

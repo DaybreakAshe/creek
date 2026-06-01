@@ -33,7 +33,12 @@ export function ToolCard({
     >
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-4 flex items-start justify-between gap-3">
-          <ToolIcon icon={tool.icon} name={tool.name} size="md" />
+          <ToolIcon
+            icon={tool.icon}
+            name={tool.name}
+            size="lg"
+            variant="plain"
+          />
           {canManage && onEdit && onDelete && (
             <div className="flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
               <Button
