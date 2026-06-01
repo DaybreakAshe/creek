@@ -5,7 +5,7 @@ import { Moon, Sun } from "lucide-react"
 import { flushSync } from "react-dom"
 import { useTranslations } from "next-intl"
 
-import { buttonVariants } from "@/components/ui/button"
+import { headerIconButtonClassName } from "@/components/header/header-actions"
 import { cn } from "@/lib/utils"
 
 interface AnimatedThemeTogglerProps
@@ -80,14 +80,14 @@ export const AnimatedThemeToggler = ({
       type="button"
       onClick={toggleTheme}
       aria-label={t("toggle")}
-      className={cn(
-        buttonVariants({ variant: "ghost", size: "icon" }),
-        "text-muted-foreground hover:text-foreground",
-        className
-      )}
+      className={cn(headerIconButtonClassName(), className)}
       {...props}
     >
-      {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+      {isDark ? (
+        <Sun className="size-4" strokeWidth={1.5} />
+      ) : (
+        <Moon className="size-4" strokeWidth={1.5} />
+      )}
     </button>
   )
 }

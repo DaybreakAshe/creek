@@ -16,6 +16,7 @@
     "close": "Close"
   },
   "nav": {
+    "mainNav": "Main navigation",
     "home": "Home",
     "about": "About",
     "tools": "Tools",

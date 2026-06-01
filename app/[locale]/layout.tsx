@@ -10,7 +10,6 @@ import {
 import { SWRConfig } from 'swr'
 import { ThemeProvider } from '@/app/theme-provider'
 import { Header } from '@/components/header'
-import { DockBox } from '@/components/dock'
 import { ClientSessionProvider } from '@/app/ClientSessionProvider'
 import { routing } from '@/i18n/routing'
 
@@ -68,7 +67,6 @@ export default async function LocaleLayout({
                 <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                   <div className="container mx-auto px-3 py-4">{children}</div>
                 </main>
-                <DockBox />
               </ThemeProvider>
             </SWRConfig>
           </ClientSessionProvider>
