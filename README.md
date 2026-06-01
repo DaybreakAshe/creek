@@ -2,7 +2,7 @@
 
 源于自然，为你精选 —— 一个基于 Next.js 的全栈 Web 应用，支持 Google 登录、工具收藏与管理、多语言切换。
 
-网站链接：[https://creek.magicui.design](https://creek.magicui.design)
+网站链接：[https://creek-flax.vercel.app](https://creek-flax.vercel.app)
 
 ## 技术栈
 
