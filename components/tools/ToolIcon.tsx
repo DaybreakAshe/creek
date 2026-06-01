@@ -3,7 +3,7 @@
 
 import { Hammer } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { isToolIconUrl } from '@/lib/tool-icon'
+import { canDisplayToolIcon } from '@/lib/tool-icon'
 
 type ToolIconSize = 'sm' | 'md' | 'lg'
 
@@ -31,7 +31,7 @@ export function ToolIcon({
 }: ToolIconProps) {
   const sizes = sizeClasses[size]
 
-  if (isToolIconUrl(icon)) {
+  if (canDisplayToolIcon(icon)) {
     return (
       <img
         src={icon!.trim()}
