@@ -42,6 +42,7 @@
     "title": "首页",
     "subtitle": "精选影像与作品",
     "addWork": "添加作品",
+    "myWorks": "我的作品",
     "gallerySection": "作品瀑布流",
     "galleryLoading": "正在加载作品",
     "galleryEmpty": "暂无公开作品，登录后可上传第一张",
@@ -160,7 +161,32 @@
     "actions": "操作",
     "editTool": "编辑 {name}",
     "deleteTool": "删除 {name}",
-    "fetchUsersFailed": "获取用户列表失败"
+    "fetchUsersFailed": "获取用户列表失败",
+    "galleryManagement": "作品管理",
+    "galleryManagementDesc": "查看、删除全站作品"
+  },
+  "gallery": {
+    "manage": {
+      "mineTitle": "我的作品",
+      "adminTitle": "作品管理",
+      "itemsCount": "共 {count} 件作品",
+      "searchPlaceholder": "搜索标题、标签、创建人、文件名…",
+      "empty": "暂无作品",
+      "noMatch": "没有找到匹配的作品",
+      "backHome": "返回首页",
+      "preview": "预览",
+      "title": "标题",
+      "type": "类型",
+      "public": "公开",
+      "creator": "创建人",
+      "fileInfo": "文件信息",
+      "createdAt": "创建时间",
+      "actions": "操作",
+      "view": "查看 {title}",
+      "delete": "删除 {title}",
+      "confirmDeleteTitle": "确认删除作品",
+      "confirmDeleteDesc": "确定删除「{title}」吗？此操作不可恢复。"
+    }
   },
   "tools": {
     "publicTitle": "工具集合",
@@ -220,6 +246,10 @@
     "createGalleryFailed": "保存作品失败",
     "mediaUrlRequired": "请先上传媒体文件",
     "invalidGalleryType": "无效的媒体类型",
+    "invalidGalleryId": "无效的作品 ID",
+    "galleryNotFound": "作品不存在",
+    "updateGalleryFailed": "更新作品失败",
+    "deleteGalleryFailed": "删除作品失败",
     "unknown": "操作失败，请稍后重试"
   }
 }

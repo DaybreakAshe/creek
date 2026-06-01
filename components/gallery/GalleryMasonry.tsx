@@ -9,8 +9,7 @@ import { GalleryMasonryCard } from '@/components/gallery/GalleryMasonryCard'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const MASONRY_BREAKPOINTS = {
-  default: 4,
-  1280: 3,
+  default: 3,
   768: 2,
   480: 1,
 }
@@ -32,18 +31,10 @@ function MasonrySkeletonItems() {
   return (
     <>
       {Array.from({ length: SKELETON_COUNT }, (_, i) => (
-        <div
-          key={i}
-          className="border-border bg-card mb-4 overflow-hidden rounded-xl border"
-        >
+        <div key={i} className="overflow-hidden rounded-xl">
           <Skeleton
-            className={`w-full rounded-none ${SKELETON_HEIGHTS[i % SKELETON_HEIGHTS.length]}`}
+            className={`w-full rounded-xl ${SKELETON_HEIGHTS[i % SKELETON_HEIGHTS.length]}`}
           />
-          <div className="space-y-2 p-3">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-full" />
-            <Skeleton className="h-3 w-2/3" />
-          </div>
         </div>
       ))}
     </>

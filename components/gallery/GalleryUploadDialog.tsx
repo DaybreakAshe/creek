@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { parseTagsInput } from '@/lib/gallery-form'
+import { parseFileExtension } from '@/lib/format-file-size'
 import { GALLERY_MEDIA_TYPES, type GalleryMediaType } from '@/lib/gallery-types'
 import { cn } from '@/lib/utils'
 
@@ -156,6 +157,9 @@ export function GalleryUploadDialog({
     mediaUrl: string
     mediaFilename: string
     mimeType: string
+    originalFilename: string
+    fileExtension: string
+    fileSize: number
     tags: string[]
     altText: string
     linkUrl: string
@@ -202,6 +206,9 @@ export function GalleryUploadDialog({
         mediaUrl: url,
         mediaFilename: filename,
         mimeType: file.type || 'application/octet-stream',
+        originalFilename: file.name,
+        fileExtension: parseFileExtension(file.name),
+        fileSize: file.size,
         tags: parseTagsInput(tags),
         altText: altText.trim(),
         linkUrl: linkUrl.trim(),

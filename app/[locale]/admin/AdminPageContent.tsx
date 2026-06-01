@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { Shield, Wrench, Users } from 'lucide-react'
+import { Images, Shield, Wrench, Users } from 'lucide-react'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getServerAuthSession } from '@/lib/auth'
@@ -64,7 +64,20 @@ export async function AdminPageContent() {
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">{t('quickLinks')}</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link
+            href="/admin/gallery"
+            className="flex items-start gap-4 rounded-xl border p-5 transition-colors hover:bg-muted/50"
+          >
+            <Images className="mt-0.5 size-5 shrink-0 text-orange-500" />
+            <div>
+              <p className="font-medium">{t('galleryManagement')}</p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {t('galleryManagementDesc')}
+              </p>
+            </div>
+          </Link>
+
           <Link
             href="/admin/tools"
             className="flex items-start gap-4 rounded-xl border p-5 transition-colors hover:bg-muted/50"

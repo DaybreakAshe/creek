@@ -27,6 +27,10 @@ export function getApiErrorMessage(
     'createGalleryFailed',
     'mediaUrlRequired',
     'invalidGalleryType',
+    'invalidGalleryId',
+    'galleryNotFound',
+    'updateGalleryFailed',
+    'deleteGalleryFailed',
   ]
 
   if (knownCodes.includes(code)) {

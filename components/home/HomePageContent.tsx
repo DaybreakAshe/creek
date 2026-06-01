@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
-import { Plus } from 'lucide-react'
+import { FolderOpen, Plus } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 import { loginRedirectPath } from '@/lib/locale-path'
 import type { Locale } from '@/i18n/routing'
@@ -37,10 +37,20 @@ export function HomePageContent() {
           <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground mt-1 text-sm">{t('subtitle')}</p>
         </div>
-        <Button onClick={handleAddClick} disabled={isLoading}>
-          <Plus className="size-4" />
-          {t('addWork')}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {isAuthenticated && (
+            <Button variant="outline" asChild disabled={isLoading}>
+              <Link href="/gallery/mine">
+                <FolderOpen className="size-4" />
+                {t('myWorks')}
+              </Link>
+            </Button>
+          )}
+          <Button onClick={handleAddClick} disabled={isLoading}>
+            <Plus className="size-4" />
+            {t('addWork')}
+          </Button>
+        </div>
       </div>
 
       <GalleryMasonry refreshToken={galleryRefreshToken} />

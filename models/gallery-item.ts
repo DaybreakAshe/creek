@@ -5,6 +5,8 @@ import type { GalleryItemRecord } from '@/lib/gallery-types'
 const galleryItemSchema = new Schema<GalleryItemRecord>(
   {
     userId: { type: String, required: true, index: true },
+    creatorName: { type: String, default: '' },
+    creatorEmail: { type: String, default: '' },
     title: { type: String, required: true },
     description: { type: String, default: '' },
     type: {
@@ -15,6 +17,9 @@ const galleryItemSchema = new Schema<GalleryItemRecord>(
     mediaUrl: { type: String, required: true },
     mediaFilename: { type: String, default: '' },
     mimeType: { type: String, default: '' },
+    originalFilename: { type: String, default: '' },
+    fileExtension: { type: String, default: '' },
+    fileSize: { type: Number, default: 0 },
     tags: { type: [String], default: [] },
     altText: { type: String, default: '' },
     linkUrl: { type: String, default: '' },

@@ -4,16 +4,21 @@ export type GalleryMediaType = (typeof GALLERY_MEDIA_TYPES)[number]
 export interface GalleryItemRecord {
   _id?: string
   userId: string
+  creatorName?: string
+  creatorEmail?: string
   title: string
   description?: string
   type: GalleryMediaType
   mediaUrl: string
   mediaFilename?: string
   mimeType?: string
+  originalFilename?: string
+  fileExtension?: string
+  fileSize?: number
   tags?: string[]
   altText?: string
   linkUrl?: string
   isPublic?: boolean
-  createdAt?: Date
-  updatedAt?: Date
+  createdAt?: Date | string
+  updatedAt?: Date | string
 }

@@ -42,6 +42,7 @@
     "title": "Home",
     "subtitle": "Curated visuals and works",
     "addWork": "Add work",
+    "myWorks": "My works",
     "gallerySection": "Gallery masonry",
     "galleryLoading": "Loading gallery",
     "galleryEmpty": "No public works yet. Sign in to upload the first one.",
@@ -160,7 +161,32 @@
     "actions": "Actions",
     "editTool": "Edit {name}",
     "deleteTool": "Delete {name}",
-    "fetchUsersFailed": "Failed to load users"
+    "fetchUsersFailed": "Failed to load users",
+    "galleryManagement": "Gallery management",
+    "galleryManagementDesc": "View and delete all works on the site"
+  },
+  "gallery": {
+    "manage": {
+      "mineTitle": "My works",
+      "adminTitle": "Gallery management",
+      "itemsCount": "{count} works total",
+      "searchPlaceholder": "Search title, tags, creator, filename…",
+      "empty": "No works yet",
+      "noMatch": "No matching works found",
+      "backHome": "Back to home",
+      "preview": "Preview",
+      "title": "Title",
+      "type": "Type",
+      "public": "Public",
+      "creator": "Creator",
+      "fileInfo": "File info",
+      "createdAt": "Created",
+      "actions": "Actions",
+      "view": "View {title}",
+      "delete": "Delete {title}",
+      "confirmDeleteTitle": "Delete work",
+      "confirmDeleteDesc": "Delete “{title}”? This cannot be undone."
+    }
   },
   "tools": {
     "publicTitle": "Tools",
@@ -220,6 +246,10 @@
     "createGalleryFailed": "Failed to save work",
     "mediaUrlRequired": "Media URL is required",
     "invalidGalleryType": "Invalid media type",
+    "invalidGalleryId": "Invalid work ID",
+    "galleryNotFound": "Work not found",
+    "updateGalleryFailed": "Failed to update work",
+    "deleteGalleryFailed": "Failed to delete work",
     "unknown": "Something went wrong. Please try again."
   }
 }

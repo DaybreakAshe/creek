@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { FileText, Music } from 'lucide-react'
+import { FileText, Music, Play } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import type { GalleryItemRecord } from '@/lib/gallery-types'
@@ -13,56 +13,42 @@ interface GalleryMasonryCardProps {
 export function GalleryMasonryCard({ item }: GalleryMasonryCardProps) {
   const t = useTranslations('home.gallery')
   const href = item.linkUrl?.trim() || item.mediaUrl
-  const openInNewTab = Boolean(href)
 
-  const media = renderMedia(item, t('previewAlt'))
   const body = (
-    <article className="border-border bg-card group overflow-hidden rounded-xl border shadow-sm transition-shadow hover:shadow-md">
-      <div className="relative">
-        {media}
-        <span className="bg-background/80 text-muted-foreground absolute top-2 right-2 rounded-md px-2 py-0.5 text-xs font-medium backdrop-blur-sm">
-          {t(`types.${item.type}`)}
-        </span>
-      </div>
-      <div className="space-y-1.5 p-3">
-        <h3 className="line-clamp-2 text-sm leading-snug font-medium">
+    <article className="group bg-muted relative overflow-hidden rounded-xl">
+      <div className="relative overflow-hidden rounded-xl">
+        {renderMedia(item, t('previewAlt'))}
+        {item.type === 'video' && (
+          <span
+            className="pointer-events-none absolute top-2.5 left-2.5 flex size-9 items-center justify-center rounded-full bg-black/45 text-white shadow-sm backdrop-blur-sm"
+            aria-hidden
+          >
+            <Play className="size-4 fill-current pl-0.5" />
+          </span>
+        )}
+        <div
+          className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-black/75 via-black/20 to-transparent opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
+          aria-hidden
+        />
+        <h3 className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-2 px-3 py-3 text-sm font-medium text-white opacity-0 drop-shadow-md transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100">
           {item.title}
         </h3>
-        {item.description ? (
-          <p className="text-muted-foreground line-clamp-2 text-xs">
-            {item.description}
-          </p>
-        ) : null}
-        {item.tags && item.tags.length > 0 ? (
-          <div className="flex flex-wrap gap-1 pt-0.5">
-            {item.tags.slice(0, 4).map((tag) => (
-              <span
-                key={tag}
-                className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px]"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        ) : null}
       </div>
     </article>
   )
 
-  if (openInNewTab) {
+  const className =
+    'block overflow-hidden rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none'
+
+  if (href) {
     return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mb-4 block focus-visible:ring-ring rounded-xl outline-none focus-visible:ring-2"
-      >
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
         {body}
       </a>
     )
   }
 
-  return <div className="mb-4">{body}</div>
+  return <div className={className}>{body}</div>
 }
 
 function renderMedia(item: GalleryItemRecord, fallbackAlt: string) {
@@ -76,30 +62,29 @@ function renderMedia(item: GalleryItemRecord, fallbackAlt: string) {
           alt={alt}
           loading="lazy"
           decoding="async"
-          className="w-full object-cover"
+          className="block w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
       )
     case 'video':
       return (
-        <div className="bg-muted aspect-video w-full">
-          <video
-            src={item.mediaUrl}
-            controls
-            playsInline
-            preload="metadata"
-            className="size-full object-cover"
-          />
-        </div>
+        <video
+          src={item.mediaUrl}
+          playsInline
+          muted
+          preload="metadata"
+          className="block w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+        />
       )
     case 'audio':
       return (
-        <div className="bg-muted flex flex-col items-center gap-3 px-4 py-8">
+        <div className="flex flex-col items-center gap-3 px-4 py-10">
           <Music className="text-muted-foreground size-10" />
           <audio
             src={item.mediaUrl}
             controls
             preload="metadata"
-            className="w-full max-w-full"
+            className="relative z-10 w-full max-w-full"
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )
@@ -108,7 +93,7 @@ function renderMedia(item: GalleryItemRecord, fallbackAlt: string) {
       return (
         <div
           className={cn(
-            'bg-muted flex flex-col items-center justify-center gap-2 px-4 py-10',
+            'flex flex-col items-center justify-center gap-2 px-4 py-12',
             'text-muted-foreground'
           )}
         >
