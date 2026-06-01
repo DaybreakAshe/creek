@@ -14,8 +14,7 @@ const MASONRY_BREAKPOINTS = {
   480: 1,
 }
 
-const SKELETON_HEIGHTS = ['h-44', 'h-56', 'h-64', 'h-48', 'h-72', 'h-52'] as const
-const SKELETON_COUNT = 12
+const SKELETON_COUNT = 9
 
 async function fetchGallery(): Promise<GalleryItemRecord[]> {
   const response = await fetch('/api/gallery')
@@ -27,15 +26,11 @@ async function fetchGallery(): Promise<GalleryItemRecord[]> {
   return data as GalleryItemRecord[]
 }
 
-/** 与 MASONRY_BREAKPOINTS 对齐的 CSS Grid，避免 Masonry 首屏单列闪烁 */
 function GallerySkeletonGrid() {
   return (
-    <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 min-[768px]:grid-cols-3">
+    <div className="grid grid-cols-3 gap-4">
       {Array.from({ length: SKELETON_COUNT }, (_, i) => (
-        <Skeleton
-          key={i}
-          className={`w-full rounded-xl ${SKELETON_HEIGHTS[i % SKELETON_HEIGHTS.length]}`}
-        />
+        <Skeleton key={i} className="aspect-[4/3] w-full rounded-xl" />
       ))}
     </div>
   )
