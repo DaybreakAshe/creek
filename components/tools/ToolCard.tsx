@@ -59,11 +59,6 @@ export function ToolCard({
         </div>
 
         <div className="mb-1 flex flex-wrap items-center gap-2">
-          {tool.category && tool.category !== 'general' && (
-            <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
-              {tool.category}
-            </span>
-          )}
           {showVisibility &&
             (tool.isPublic ? (
               <span className="text-muted-foreground inline-flex items-center gap-1 text-[10px]">
