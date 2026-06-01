@@ -10,11 +10,15 @@ export const Header = () => {
   return (
     <header className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/80 z-50 w-full shrink-0 border-b backdrop-blur">
       <div className="grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-5">
-        <Link href="/" className="justify-self-start">
+        <Link
+          href="/"
+          aria-label="Creek"
+          className="justify-self-start block h-full w-20 shrink-0"
+        >
           <VideoText
             src="https://cdn.magicui.design/ocean-small.webm"
             fontSize={30}
-            className="w-20"
+            className="size-full"
           >
             Creek
           </VideoText>
