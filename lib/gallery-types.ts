@@ -1,6 +1,10 @@
 export const GALLERY_MEDIA_TYPES = ['image', 'video', 'audio', 'document'] as const
 export type GalleryMediaType = (typeof GALLERY_MEDIA_TYPES)[number]
 
+/** 上传弹窗当前开放的类型 */
+export const GALLERY_UPLOAD_MEDIA_TYPES = ['image', 'video'] as const
+export type GalleryUploadMediaType = (typeof GALLERY_UPLOAD_MEDIA_TYPES)[number]
+
 export interface GalleryItemRecord {
   _id?: string
   userId: string

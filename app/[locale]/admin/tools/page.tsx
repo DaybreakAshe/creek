@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { ToolIcon } from '@/components/tools/ToolIcon'
 import { ToolLink } from '@/models/tool'
 import { formatDateTime } from '@/lib/format-date'
 import type { Locale } from '@/i18n/routing'
@@ -185,7 +186,7 @@ export default function AdminToolsPage() {
                   <tr key={tool._id} className="border-b last:border-b-0">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        {tool.icon && <span>{tool.icon}</span>}
+                        <ToolIcon icon={tool.icon} name={tool.name} size="sm" />
                         <span className="font-medium">{tool.name}</span>
                       </div>
                     </td>

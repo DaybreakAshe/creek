@@ -3,13 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import {
-  FileText,
-  Film,
-  ImagePlus,
-  Image as ImageIcon,
-  Music,
-} from 'lucide-react'
+import { Film, ImagePlus, Image as ImageIcon } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -22,7 +16,10 @@ import { Label } from '@/components/ui/label'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { parseTagsInput } from '@/lib/gallery-form'
 import { parseFileExtension } from '@/lib/format-file-size'
-import { GALLERY_MEDIA_TYPES, type GalleryMediaType } from '@/lib/gallery-types'
+import {
+  GALLERY_UPLOAD_MEDIA_TYPES,
+  type GalleryUploadMediaType,
+} from '@/lib/gallery-types'
 import { cn } from '@/lib/utils'
 
 interface GalleryUploadDialogProps {
@@ -39,9 +36,13 @@ const GALLERY_UPLOAD_FOLDER = '/creek/gallery'
 const TYPE_ICONS = {
   image: ImageIcon,
   video: Film,
-  audio: Music,
-  document: FileText,
 } as const
+
+function isAllowedUploadFile(file: File) {
+  return (
+    file.type.startsWith('image/') || file.type.startsWith('video/')
+  )
+}
 
 type SubmitPhase = 'idle' | 'uploading' | 'saving'
 
@@ -57,7 +58,7 @@ export function GalleryUploadDialog({
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [type, setType] = useState<GalleryMediaType>('image')
+  const [type, setType] = useState<GalleryUploadMediaType>('image')
   const [tags, setTags] = useState('')
   const [altText, setAltText] = useState('')
   const [linkUrl, setLinkUrl] = useState('')
@@ -105,15 +106,23 @@ export function GalleryUploadDialog({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0] ?? null
+    if (!selected) return
+
+    if (!isAllowedUploadFile(selected)) {
+      setError(t('mediaTypeNotAllowed'))
+      setFile(null)
+      resetFileInput()
+      return
+    }
+
+    setError(null)
     setFile(selected)
     setUploadedMediaUrl(null)
-    if (selected?.type.startsWith('image/')) {
-      setType('image')
-    } else if (selected?.type.startsWith('video/')) {
-      setType('video')
-    } else if (selected?.type.startsWith('audio/')) {
-      setType('audio')
-    }
+    setType(selected.type.startsWith('video/') ? 'video' : 'image')
+  }
+
+  const resetFileInput = () => {
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const uploadFileToSirv = async (
@@ -153,7 +162,7 @@ export function GalleryUploadDialog({
   const saveGalleryItem = async (payload: {
     title: string
     description: string
-    type: GalleryMediaType
+    type: GalleryUploadMediaType
     mediaUrl: string
     mediaFilename: string
     mimeType: string
@@ -188,6 +197,11 @@ export function GalleryUploadDialog({
     e.preventDefault()
     if (!file) {
       setError(t('fileRequired'))
+      return
+    }
+
+    if (!isAllowedUploadFile(file)) {
+      setError(t('mediaTypeNotAllowed'))
       return
     }
 
@@ -244,32 +258,14 @@ export function GalleryUploadDialog({
       )
     }
 
-    if (type === 'video' || file.type.startsWith('video/')) {
-      return (
-        <video
-          src={previewUrl}
-          controls
-          playsInline
-          preload="metadata"
-          className="max-h-full max-w-full object-contain"
-        />
-      )
-    }
-
-    if (type === 'audio' || file.type.startsWith('audio/')) {
-      return (
-        <div className="flex max-h-full w-full flex-col items-center justify-center gap-2 p-2">
-          <Music className="text-muted-foreground size-8 shrink-0" />
-          <audio src={previewUrl} controls preload="metadata" className="w-full" />
-        </div>
-      )
-    }
-
     return (
-      <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 p-2">
-        <FileText className="size-8 shrink-0 opacity-70" />
-        <span className="max-w-full truncate px-2 text-xs">{file.name}</span>
-      </div>
+      <video
+        src={previewUrl}
+        controls
+        playsInline
+        preload="metadata"
+        className="max-h-full max-w-full object-contain"
+      />
     )
   }
 
@@ -288,7 +284,7 @@ export function GalleryUploadDialog({
                 ref={fileInputRef}
                 type="file"
                 className="sr-only"
-                accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+                accept="image/*,video/*"
                 onChange={handleFileChange}
                 disabled={submitting}
               />
@@ -336,8 +332,8 @@ export function GalleryUploadDialog({
 
               <div className="relative z-10 shrink-0 space-y-1.5">
                 <Label className="text-xs">{t('typeLabel')}</Label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {GALLERY_MEDIA_TYPES.map((mediaType) => {
+                <div className="grid grid-cols-2 gap-1.5">
+                  {GALLERY_UPLOAD_MEDIA_TYPES.map((mediaType) => {
                     const Icon = TYPE_ICONS[mediaType]
                     const active = type === mediaType
                     return (
