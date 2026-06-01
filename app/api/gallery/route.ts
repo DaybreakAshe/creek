@@ -1,22 +1,10 @@
 import { NextResponse } from 'next/server'
 import { apiError } from '@/lib/api-response'
-import {
-  inferGalleryTypeFromMime,
-  parseGalleryType,
-  parseTagsInput,
-} from '@/lib/gallery-form'
+import { parseGalleryType, parseTagsInput } from '@/lib/gallery-form'
 import { connectToDatabase } from '@/lib/mongodb'
 import { requireAuth } from '@/lib/require-auth'
 import { getSessionUserId } from '@/lib/session-user'
-import {
-  buildUploadPath,
-  getSirvConfig,
-  uploadToSirv,
-} from '@/lib/sirv'
 import GalleryItem from '@/models/gallery-item'
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024
-const GALLERY_FOLDER = '/creek/gallery'
 const DEFAULT_LIST_LIMIT = 100
 
 export async function GET(request: Request) {
@@ -51,75 +39,58 @@ export async function POST(request: Request) {
       return apiError('userIdentityUnknown', 401)
     }
 
-    if (!getSirvConfig()) {
-      return apiError('sirvNotConfigured', 503)
-    }
+    const body = (await request.json()) as Record<string, unknown>
+    const title = typeof body.title === 'string' ? body.title.trim() : ''
+    const mediaUrl = typeof body.mediaUrl === 'string' ? body.mediaUrl.trim() : ''
 
-    const formData = await request.formData()
-    const file = formData.get('file')
-    const title = formData.get('title')
-
-    if (!file || !(file instanceof File)) {
-      return apiError('fileRequired', 400)
-    }
-
-    if (typeof title !== 'string' || !title.trim()) {
+    if (!title) {
       return apiError('titleRequired', 400)
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      return apiError('fileTooLarge', 413)
+    if (!mediaUrl) {
+      return apiError('mediaUrlRequired', 400)
     }
 
-    const mimeType = file.type || 'application/octet-stream'
-    const explicitType = parseGalleryType(formData.get('type'))
-    const type = explicitType ?? inferGalleryTypeFromMime(mimeType)
+    const type = parseGalleryType(
+      typeof body.type === 'string' ? body.type : null
+    )
+    if (!type) {
+      return apiError('invalidGalleryType', 400)
+    }
 
     const description =
-      typeof formData.get('description') === 'string'
-        ? formData.get('description')!.toString().trim()
-        : ''
+      typeof body.description === 'string' ? body.description.trim() : ''
     const altText =
-      typeof formData.get('altText') === 'string'
-        ? formData.get('altText')!.toString().trim()
-        : ''
+      typeof body.altText === 'string' ? body.altText.trim() : ''
     const linkUrl =
-      typeof formData.get('linkUrl') === 'string'
-        ? formData.get('linkUrl')!.toString().trim()
-        : ''
-    const tagsRaw =
-      typeof formData.get('tags') === 'string' ? formData.get('tags')!.toString() : ''
-    const tags = parseTagsInput(tagsRaw)
-    const isPublic = formData.get('isPublic') !== 'false'
-
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const sirvPath = buildUploadPath(file.name, GALLERY_FOLDER)
-    const upload = await uploadToSirv(buffer, {
-      filename: sirvPath,
-      contentType: mimeType,
-    })
+      typeof body.linkUrl === 'string' ? body.linkUrl.trim() : ''
+    const mediaFilename =
+      typeof body.mediaFilename === 'string' ? body.mediaFilename.trim() : ''
+    const mimeType =
+      typeof body.mimeType === 'string' ? body.mimeType.trim() : ''
+    const tags = Array.isArray(body.tags)
+      ? body.tags.filter((tag): tag is string => typeof tag === 'string')
+      : parseTagsInput(typeof body.tags === 'string' ? body.tags : '')
+    const isPublic = body.isPublic !== false
 
     await connectToDatabase()
 
     const item = await GalleryItem.create({
       userId: sessionUserId,
-      title: title.trim(),
+      title,
       description,
       type,
-      mediaUrl: upload.url,
-      mediaFilename: upload.filename,
+      mediaUrl,
+      mediaFilename,
       mimeType,
       tags,
-      altText: altText || title.trim(),
+      altText: altText || title,
       linkUrl,
       isPublic,
     })
 
     return NextResponse.json(item, { status: 201 })
-  } catch (error) {
-    if (error instanceof Error && error.message === 'SIRV_NOT_CONFIGURED') {
-      return apiError('sirvNotConfigured', 503)
-    }
+  } catch {
     return apiError('createGalleryFailed', 500)
   }
 }

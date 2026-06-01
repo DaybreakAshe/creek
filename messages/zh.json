@@ -68,7 +68,12 @@
       "isPublicLabel": "公开展示",
       "previewAlt": "预览",
       "fileRequired": "请选择媒体文件",
-      "uploading": "上传中…",
+      "selectFile": "点击选择本地文件",
+      "changeFile": "更换文件",
+      "uploadingMedia": "正在上传到 Sirv…",
+      "saving": "正在保存…",
+      "mediaUploaded": "已上传",
+      "saveFailed": "保存失败，请重试",
       "submit": "上传并保存"
     }
   },
@@ -209,6 +214,8 @@
     "titleRequired": "请填写标题",
     "fetchGalleryFailed": "获取作品列表失败",
     "createGalleryFailed": "保存作品失败",
+    "mediaUrlRequired": "请先上传媒体文件",
+    "invalidGalleryType": "无效的媒体类型",
     "unknown": "操作失败，请稍后重试"
   }
 }

@@ -68,7 +68,12 @@
       "isPublicLabel": "Show publicly",
       "previewAlt": "Preview",
       "fileRequired": "Please select a media file",
-      "uploading": "Uploading…",
+      "selectFile": "Choose a local file",
+      "changeFile": "Change file",
+      "uploadingMedia": "Uploading to Sirv…",
+      "saving": "Saving…",
+      "mediaUploaded": "Uploaded",
+      "saveFailed": "Save failed, please try again",
       "submit": "Upload & save"
     }
   },
@@ -209,6 +214,8 @@
     "titleRequired": "Title is required",
     "fetchGalleryFailed": "Failed to load gallery",
     "createGalleryFailed": "Failed to save work",
+    "mediaUrlRequired": "Media URL is required",
+    "invalidGalleryType": "Invalid media type",
     "unknown": "Something went wrong. Please try again."
   }
 }

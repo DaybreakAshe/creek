@@ -25,6 +25,8 @@ export function getApiErrorMessage(
     'titleRequired',
     'fetchGalleryFailed',
     'createGalleryFailed',
+    'mediaUrlRequired',
+    'invalidGalleryType',
   ]
 
   if (knownCodes.includes(code)) {
