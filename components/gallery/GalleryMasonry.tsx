@@ -27,17 +27,17 @@ async function fetchGallery(): Promise<GalleryItemRecord[]> {
   return data as GalleryItemRecord[]
 }
 
-function MasonrySkeletonItems() {
+/** 与 MASONRY_BREAKPOINTS 对齐的 CSS Grid，避免 Masonry 首屏单列闪烁 */
+function GallerySkeletonGrid() {
   return (
-    <>
+    <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 min-[768px]:grid-cols-3">
       {Array.from({ length: SKELETON_COUNT }, (_, i) => (
-        <div key={i} className="overflow-hidden rounded-xl">
-          <Skeleton
-            className={`w-full rounded-xl ${SKELETON_HEIGHTS[i % SKELETON_HEIGHTS.length]}`}
-          />
-        </div>
+        <Skeleton
+          key={i}
+          className={`w-full rounded-xl ${SKELETON_HEIGHTS[i % SKELETON_HEIGHTS.length]}`}
+        />
       ))}
-    </>
+    </div>
   )
 }
 
@@ -58,13 +58,7 @@ export function GalleryMasonry({ refreshToken = 0 }: GalleryMasonryProps) {
   if (isLoading) {
     return (
       <section aria-label={t('galleryLoading')} aria-busy="true">
-        <Masonry
-          breakpointCols={MASONRY_BREAKPOINTS}
-          className="gallery-masonry-grid"
-          columnClassName="gallery-masonry-grid_column"
-        >
-          <MasonrySkeletonItems />
-        </Masonry>
+        <GallerySkeletonGrid />
       </section>
     )
   }
