@@ -40,9 +40,11 @@
   },
   "home": {
     "title": "首页",
-    "subtitle": "精选影像与作品，瀑布流展示即将上线",
+    "subtitle": "精选影像与作品",
     "addWork": "添加作品",
-    "waterfallPlaceholder": "瀑布流展示区开发中，可先上传作品",
+    "gallerySection": "作品瀑布流",
+    "galleryLoading": "正在加载作品",
+    "galleryEmpty": "暂无公开作品，登录后可上传第一张",
     "loginHint": "上传作品需先",
     "loginLink": "登录",
     "gallery": {

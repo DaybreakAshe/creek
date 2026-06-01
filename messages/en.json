@@ -40,9 +40,11 @@
   },
   "home": {
     "title": "Home",
-    "subtitle": "Curated visuals — masonry gallery coming soon",
+    "subtitle": "Curated visuals and works",
     "addWork": "Add work",
-    "waterfallPlaceholder": "Masonry gallery is in progress — you can upload works now",
+    "gallerySection": "Gallery masonry",
+    "galleryLoading": "Loading gallery",
+    "galleryEmpty": "No public works yet. Sign in to upload the first one.",
     "loginHint": "Sign in to upload",
     "loginLink": "Log in",
     "gallery": {

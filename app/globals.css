@@ -353,3 +353,14 @@
     background-color: color-mix(in srgb, var(--foreground) 35%, transparent);
   }
 }
+
+.gallery-masonry-grid {
+  display: flex;
+  margin-left: -0.75rem;
+  width: auto;
+}
+
+.gallery-masonry-grid_column {
+  padding-left: 0.75rem;
+  background-clip: padding-box;
+}

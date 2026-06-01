@@ -10,12 +10,14 @@ import type { Locale } from '@/i18n/routing'
 import { useLocale } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { GalleryUploadDialog } from '@/components/gallery/GalleryUploadDialog'
+import { GalleryMasonry } from '@/components/gallery/GalleryMasonry'
 
 export function HomePageContent() {
   const t = useTranslations('home')
   const locale = useLocale() as Locale
   const { status } = useSession()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [galleryRefreshToken, setGalleryRefreshToken] = useState(0)
 
   const isAuthenticated = status === 'authenticated'
   const isLoading = status === 'loading'
@@ -41,27 +43,21 @@ export function HomePageContent() {
         </Button>
       </div>
 
-      <section
-        className="border-border bg-muted/30 flex min-h-[200px] flex-col items-center justify-center rounded-lg border border-dashed px-6 py-12 text-center"
-        aria-label={t('waterfallPlaceholder')}
-      >
-        <p className="text-muted-foreground text-sm">{t('waterfallPlaceholder')}</p>
-        {!isAuthenticated && !isLoading && (
-          <p className="text-muted-foreground mt-2 text-xs">
-            {t('loginHint')}{' '}
-            <Link href="/login" className="text-primary underline-offset-4 hover:underline">
-              {t('loginLink')}
-            </Link>
-          </p>
-        )}
-      </section>
+      <GalleryMasonry refreshToken={galleryRefreshToken} />
+
+      {!isAuthenticated && !isLoading && (
+        <p className="text-muted-foreground text-center text-xs">
+          {t('loginHint')}{' '}
+          <Link href="/login" className="text-primary underline-offset-4 hover:underline">
+            {t('loginLink')}
+          </Link>
+        </p>
+      )}
 
       <GalleryUploadDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSuccess={() => {
-          // 瀑布流展示后续接入；上传成功后仅关闭弹窗
-        }}
+        onSuccess={() => setGalleryRefreshToken((k) => k + 1)}
       />
     </div>
   )
