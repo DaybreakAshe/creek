@@ -5,6 +5,7 @@
   },
   "common": {
     "loading": "加载中...",
+    "loadingMore": "加载更多...",
     "cancel": "取消",
     "save": "保存",
     "delete": "删除",

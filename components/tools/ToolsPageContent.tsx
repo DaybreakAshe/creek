@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useSession } from 'next-auth/react'
@@ -9,8 +9,10 @@ import { canManageTool } from '@/lib/tool-auth'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { loginRedirectPath } from '@/lib/locale-path'
 import type { Locale } from '@/i18n/routing'
+import { usePaginatedList } from '@/hooks/use-paginated-list'
 import { ToolCard } from '@/components/tools/ToolCard'
 import { ToolDialog } from '@/components/tools/ToolDialog'
+import { PaginatedVirtuosoGrid } from '@/components/ui/paginated-virtuoso-grid'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -29,67 +31,74 @@ interface ToolsPageContentProps {
   scope: ToolsScope
 }
 
+const SEARCH_DEBOUNCE_MS = 300
+
 export function ToolsPageContent({ scope }: ToolsPageContentProps) {
   const t = useTranslations('tools')
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
   const locale = useLocale() as Locale
   const { data: session, status } = useSession()
-  const [tools, setTools] = useState<ToolLink[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTool, setEditingTool] = useState<ToolLink | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const userId = session?.user?.id
-
-  const fetchTools = async (targetUserId?: string) => {
-    try {
-      setError(null)
-      const url =
-        scope === 'mine' && targetUserId
-          ? `/api/tools?userId=${encodeURIComponent(targetUserId)}`
-          : '/api/tools'
-      const response = await fetch(url)
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}))
-        throw new Error(
-          getApiErrorMessage(tErrors, data.error, 'fetchToolsFailed')
-        )
-      }
-      const data = await response.json()
-      setTools(data)
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : t('fetchFailed')
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
+  const isMine = scope === 'mine'
+  const listEnabled =
+    scope === 'public' ||
+    (status === 'authenticated' && Boolean(userId))
 
   useEffect(() => {
-    if (scope === 'mine') {
-      if (status === 'loading') return
-      if (status === 'unauthenticated') {
-        window.location.href = loginRedirectPath('/tools/mine', locale)
-        return
-      }
-      if (!session?.user?.id) return
-      fetchTools(session.user.id)
-      return
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+    }, SEARCH_DEBOUNCE_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (scope !== 'mine') return
+    if (status === 'loading') return
+    if (status === 'unauthenticated') {
+      window.location.href = loginRedirectPath('/tools/mine', locale)
     }
-    fetchTools()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, status, session?.user?.id, locale])
+  }, [scope, status, locale])
+
+  const listQuery = useMemo(
+    () =>
+      isMine && userId ? { userId } : {},
+    [isMine, userId]
+  )
+
+  const {
+    items: tools,
+    loading,
+    loadingMore,
+    error: listError,
+    hasMore,
+    refresh,
+    loadMore,
+  } = usePaginatedList<ToolLink>({
+    basePath: '/api/tools',
+    query: listQuery,
+    search: debouncedSearch,
+    enabled: listEnabled,
+    resetDeps: [scope, userId],
+  })
+
+  const error = actionError ?? (listError
+    ? getApiErrorMessage(tErrors, listError, 'fetchToolsFailed')
+    : null)
 
   const handleSave = async (toolData: Partial<ToolLink>) => {
     try {
-      setError(null)
+      setActionError(null)
       if (editingTool?._id) {
         const response = await fetch(`/api/tools/${editingTool._id}`, {
           method: 'PUT',
@@ -115,10 +124,10 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
           )
         }
       }
-      fetchTools(scope === 'mine' ? userId : undefined)
+      refresh()
       setEditingTool(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('saveFailed'))
+      setActionError(err instanceof Error ? err.message : t('saveFailed'))
     }
   }
 
@@ -132,7 +141,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
     const id = pendingDeleteId
     setDeleting(true)
     try {
-      setError(null)
+      setActionError(null)
       const response = await fetch(`/api/tools/${id}`, { method: 'DELETE' })
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
@@ -140,11 +149,11 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
           getApiErrorMessage(tErrors, data.error, 'deleteToolFailed')
         )
       }
-      fetchTools(scope === 'mine' ? userId : undefined)
+      refresh()
       setDeleteDialogOpen(false)
       setPendingDeleteId(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('deleteFailed'))
+      setActionError(err instanceof Error ? err.message : t('deleteFailed'))
     } finally {
       setDeleting(false)
     }
@@ -167,22 +176,13 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
     setDialogOpen(true)
   }
 
-  const filteredTools = tools.filter(
-    (tool) =>
-      tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.url.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  if (loading || (scope === 'mine' && status === 'loading')) {
+  if (loading || (isMine && status === 'loading')) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <p className="text-muted-foreground">{tCommon('loading')}</p>
       </div>
     )
   }
-
-  const isMine = scope === 'mine'
 
   return (
     <div>
@@ -229,16 +229,16 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
         )}
       </div>
 
-      {filteredTools.length === 0 ? (
+      {tools.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-muted-foreground mb-4">
-            {searchQuery
+            {debouncedSearch
               ? t('noMatch')
               : isMine
                 ? t('noMineTools')
                 : t('noPublicTools')}
           </p>
-          {isMine && !searchQuery && (
+          {isMine && !debouncedSearch && (
             <Button onClick={handleAdd} variant="outline">
               <Plus className="size-4" />
               {t('addFirstTool')}
@@ -246,12 +246,21 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredTools.map((tool) => {
+        <PaginatedVirtuosoGrid
+          items={tools}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onLoadMore={loadMore}
+          getItemKey={(tool, index) => tool._id ?? `${tool.url}-${index}`}
+          footer={
+            <p className="text-muted-foreground text-sm">
+              {tCommon('loadingMore')}
+            </p>
+          }
+          renderItem={(tool) => {
             const manageable = canManageTool(tool, userId)
             return (
               <ToolCard
-                key={tool._id}
                 tool={tool}
                 canManage={manageable}
                 showVisibility={isMine}
@@ -259,8 +268,8 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
                 onDelete={manageable ? handleDeleteRequest : undefined}
               />
             )
-          })}
-        </div>
+          }}
+        />
       )}
 
       <ToolDialog

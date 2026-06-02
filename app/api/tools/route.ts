@@ -6,6 +6,12 @@ import { getSessionUserId, isSessionUser } from '@/lib/session-user'
 import { publicToolsFilter } from '@/lib/tool-auth'
 import { requireAuth } from '@/lib/require-auth'
 import { apiError } from '@/lib/api-response'
+import {
+  buildTextSearchFilter,
+  paginateQuery,
+  parsePaginationParams,
+  parseSearchQuery,
+} from '@/lib/pagination/server'
 import Tool from '@/models/tool'
 
 const writableFields = [
@@ -16,6 +22,8 @@ const writableFields = [
   'category',
   'isPublic',
 ] as const
+
+const TOOL_SEARCH_FIELDS = ['name', 'description', 'url'] as const
 
 function pickWritableFields(body: Record<string, unknown>) {
   return Object.fromEntries(
@@ -31,6 +39,9 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+    const pagination = parsePaginationParams(searchParams)
+    const search = parseSearchQuery(searchParams)
+    const searchFilter = buildTextSearchFilter(search, TOOL_SEARCH_FIELDS)
 
     if (userId) {
       const session = await getServerAuthSession()
@@ -48,13 +59,22 @@ export async function GET(request: Request) {
       }
 
       const ownerId = isSelf ? sessionUserId : userId
-      const tools = await Tool.find({ userId: ownerId }).sort({ createdAt: -1 })
+      const result = await paginateQuery(
+        Tool,
+        { userId: ownerId, ...searchFilter },
+        pagination
+      )
 
-      return NextResponse.json(tools)
+      return NextResponse.json(result)
     }
 
-    const tools = await Tool.find(publicToolsFilter).sort({ createdAt: -1 })
-    return NextResponse.json(tools)
+    const result = await paginateQuery(
+      Tool,
+      { ...publicToolsFilter, ...searchFilter },
+      pagination
+    )
+
+    return NextResponse.json(result)
   } catch {
     return apiError('fetchToolsFailed', 500)
   }

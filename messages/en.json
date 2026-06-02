@@ -5,6 +5,7 @@
   },
   "common": {
     "loading": "Loading...",
+    "loadingMore": "Loading more...",
     "cancel": "Cancel",
     "save": "Save",
     "delete": "Delete",
