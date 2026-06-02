@@ -27,7 +27,7 @@ export function ToolCard({
   return (
     <article
       className={cn(
-        'group border-border/60 bg-card relative flex flex-col overflow-hidden rounded-2xl border',
+        'group border-border/60 bg-card relative flex h-full flex-col overflow-hidden rounded-2xl border',
         'transition-all duration-300 hover:border-border hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20'
       )}
     >

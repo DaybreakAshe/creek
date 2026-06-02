@@ -12,7 +12,7 @@ import type { Locale } from '@/i18n/routing'
 import { usePaginatedList } from '@/hooks/use-paginated-list'
 import { ToolCard } from '@/components/tools/ToolCard'
 import { ToolDialog } from '@/components/tools/ToolDialog'
-import { PaginatedVirtuosoGrid } from '@/components/ui/paginated-virtuoso-grid'
+import { PaginatedInfiniteGrid } from '@/components/ui/paginated-infinite-grid'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -246,7 +246,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
           )}
         </div>
       ) : (
-        <PaginatedVirtuosoGrid
+        <PaginatedInfiniteGrid
           items={tools}
           hasMore={hasMore}
           loadingMore={loadingMore}
