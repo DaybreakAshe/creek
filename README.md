@@ -2,7 +2,7 @@
 
 源于自然，为你精选 —— 一个基于 Next.js 的全栈 Web 应用，支持 Google 登录、工具收藏与管理、多语言切换。
 
-网站链接：[(https://www.icreek.xyz)]https://www.icreek.xyz
+网站链接：[(https://www.icreek.xyz)](https://www.icreek.xyz)
 
 ## 技术栈
 
