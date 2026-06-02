@@ -1,5 +1,5 @@
 import type { PaginatedResponse } from '@/lib/pagination/types'
-import { DEFAULT_LIMIT } from '@/lib/pagination/types'
+import { ADMIN_PAGE_SIZE, DEFAULT_LIMIT } from '@/lib/pagination/types'
 
 export interface PaginatedListQuery {
   page?: number
@@ -38,3 +38,4 @@ export async function fetchPaginatedList<T>(
 }
 
 export const DEFAULT_LIST_PAGE_SIZE = DEFAULT_LIMIT
+export const DEFAULT_ADMIN_PAGE_SIZE = ADMIN_PAGE_SIZE

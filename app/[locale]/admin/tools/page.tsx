@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { AdminBackLink } from '@/components/admin/AdminBackLink'
 import { ToolDialog } from '@/components/tools/ToolDialog'
+import { PaginationControls } from '@/components/ui/pagination-controls'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -17,41 +18,58 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ToolIcon } from '@/components/tools/ToolIcon'
+import { usePaginatedPage } from '@/hooks/use-paginated-page'
+import { getApiErrorMessage } from '@/lib/api-error'
 import { ToolLink } from '@/models/tool'
 import { formatDateTime } from '@/lib/format-date'
 import type { Locale } from '@/i18n/routing'
+
+const SEARCH_DEBOUNCE_MS = 300
 
 export default function AdminToolsPage() {
   const t = useTranslations('admin')
   const tTools = useTranslations('tools')
   const tCommon = useTranslations('common')
   const tProfile = useTranslations('profile')
+  const tErrors = useTranslations('errors')
   const locale = useLocale() as Locale
-  const [tools, setTools] = useState<ToolLink[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTool, setEditingTool] = useState<ToolLink | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  const fetchTools = async () => {
-    try {
-      const response = await fetch('/api/admin/tools')
-      if (!response.ok) throw new Error('Failed to fetch tools')
-      const data = await response.json()
-      setTools(data)
-    } catch (error) {
-      console.error('Error fetching tools:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchTools()
-  }, [])
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+    }, SEARCH_DEBOUNCE_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const {
+    items: tools,
+    pagination,
+    loading,
+    error,
+    page,
+    setPage,
+    refresh,
+  } = usePaginatedPage<ToolLink>({
+    basePath: '/api/admin/tools',
+    search: debouncedSearch,
+  })
+
+  const listError = error
+    ? getApiErrorMessage(tErrors, error, 'fetchToolsFailed')
+    : null
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const handleSave = async (toolData: Partial<ToolLink>) => {
     try {
@@ -70,10 +88,10 @@ export default function AdminToolsPage() {
         })
         if (!response.ok) throw new Error('Failed to create tool')
       }
-      fetchTools()
+      refresh()
       setEditingTool(null)
-    } catch (error) {
-      console.error('Error saving tool:', error)
+    } catch (err) {
+      console.error('Error saving tool:', err)
     }
   }
 
@@ -89,11 +107,11 @@ export default function AdminToolsPage() {
     try {
       const response = await fetch(`/api/tools/${id}`, { method: 'DELETE' })
       if (!response.ok) throw new Error('Failed to delete tool')
-      fetchTools()
+      refresh()
       setDeleteDialogOpen(false)
       setPendingDeleteId(null)
-    } catch (error) {
-      console.error('Error deleting tool:', error)
+    } catch (err) {
+      console.error('Error deleting tool:', err)
     } finally {
       setDeleting(false)
     }
@@ -109,16 +127,10 @@ export default function AdminToolsPage() {
     setDialogOpen(true)
   }
 
-  const filteredTools = tools.filter(
-    (tool) =>
-      tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.userId?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const totalCount = pagination?.total ?? 0
+  const totalPages = pagination?.totalPages ?? 0
 
-  if (loading) {
+  if (loading && tools.length === 0) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <p className="text-muted-foreground">{tCommon('loading')}</p>
@@ -134,7 +146,7 @@ export default function AdminToolsPage() {
         <div className="space-y-1">
           <h1 className="text-3xl font-bold">{t('toolsTitle')}</h1>
           <p className="text-muted-foreground text-sm">
-            {t('toolsCount', { count: tools.length })}
+            {t('toolsCount', { count: totalCount })}
           </p>
         </div>
         <Button onClick={handleAdd}>
@@ -153,12 +165,18 @@ export default function AdminToolsPage() {
         />
       </div>
 
-      {filteredTools.length === 0 ? (
+      {listError && (
+        <p className="text-destructive text-sm" role="alert">
+          {listError}
+        </p>
+      )}
+
+      {tools.length === 0 ? (
         <div className="rounded-xl border py-12 text-center">
           <p className="text-muted-foreground mb-4">
-            {searchQuery ? t('noToolsMatch') : t('noTools')}
+            {debouncedSearch ? t('noToolsMatch') : t('noTools')}
           </p>
-          {!searchQuery && (
+          {!debouncedSearch && (
             <Button onClick={handleAdd} variant="outline">
               <Plus className="size-4" />
               {t('addFirstTool')}
@@ -166,82 +184,92 @@ export default function AdminToolsPage() {
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-sm">
-              <thead>
-                <tr className="bg-muted/50 border-b text-left">
-                  <th className="px-4 py-3 font-medium">{t('name')}</th>
-                  <th className="px-4 py-3 font-medium">{t('url')}</th>
-                  <th className="px-4 py-3 font-medium">{t('category')}</th>
-                  <th className="px-4 py-3 font-medium">{t('public')}</th>
-                  <th className="px-4 py-3 font-medium">{tProfile('userId')}</th>
-                  <th className="px-4 py-3 font-medium">{t('description')}</th>
-                  <th className="px-4 py-3 font-medium">{t('updatedAt')}</th>
-                  <th className="px-4 py-3 text-right font-medium">{t('actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTools.map((tool) => (
-                  <tr key={tool._id} className="border-b last:border-b-0">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <ToolIcon icon={tool.icon} name={tool.name} size="sm" />
-                        <span className="font-medium">{tool.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link
-                        href={tool.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary max-w-[200px] truncate hover:underline"
-                      >
-                        {tool.url}
-                      </Link>
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3">
-                      {tool.category || 'general'}
-                    </td>
-                    <td className="px-4 py-3">
-                      {tool.isPublic ? tCommon('yes') : tCommon('no')}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs break-all">
-                      {tool.userId || '-'}
-                    </td>
-                    <td className="text-muted-foreground max-w-[180px] truncate px-4 py-3">
-                      {tool.description || '-'}
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3 whitespace-nowrap">
-                      {tool.updatedAt
-                        ? formatDateTime(tool.updatedAt, locale)
-                        : '-'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t('editTool', { name: tool.name })}
-                          onClick={() => handleEdit(tool)}
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t('deleteTool', { name: tool.name })}
-                          onClick={() => handleDeleteRequest(tool._id!)}
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </td>
+        <div className="space-y-4">
+          <div className="overflow-hidden rounded-xl border">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[960px] text-sm">
+                <thead>
+                  <tr className="bg-muted/50 border-b text-left">
+                    <th className="px-4 py-3 font-medium">{t('name')}</th>
+                    <th className="px-4 py-3 font-medium">{t('url')}</th>
+                    <th className="px-4 py-3 font-medium">{t('category')}</th>
+                    <th className="px-4 py-3 font-medium">{t('public')}</th>
+                    <th className="px-4 py-3 font-medium">{tProfile('userId')}</th>
+                    <th className="px-4 py-3 font-medium">{t('description')}</th>
+                    <th className="px-4 py-3 font-medium">{t('updatedAt')}</th>
+                    <th className="px-4 py-3 text-right font-medium">{t('actions')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {tools.map((tool) => (
+                    <tr key={tool._id} className="border-b last:border-b-0">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <ToolIcon icon={tool.icon} name={tool.name} size="sm" />
+                          <span className="font-medium">{tool.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={tool.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary max-w-[200px] truncate hover:underline"
+                        >
+                          {tool.url}
+                        </Link>
+                      </td>
+                      <td className="text-muted-foreground px-4 py-3">
+                        {tool.category || 'general'}
+                      </td>
+                      <td className="px-4 py-3">
+                        {tool.isPublic ? tCommon('yes') : tCommon('no')}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs break-all">
+                        {tool.userId || '-'}
+                      </td>
+                      <td className="text-muted-foreground max-w-[180px] truncate px-4 py-3">
+                        {tool.description || '-'}
+                      </td>
+                      <td className="text-muted-foreground px-4 py-3 whitespace-nowrap">
+                        {tool.updatedAt
+                          ? formatDateTime(tool.updatedAt, locale)
+                          : '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t('editTool', { name: tool.name })}
+                            onClick={() => handleEdit(tool)}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t('deleteTool', { name: tool.name })}
+                            onClick={() => handleDeleteRequest(tool._id!)}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            total={totalCount}
+            disabled={loading}
+            onPageChange={handlePageChange}
+          />
         </div>
       )}
 

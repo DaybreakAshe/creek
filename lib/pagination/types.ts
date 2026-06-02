@@ -22,4 +22,5 @@ export interface PaginationParams {
 
 export const DEFAULT_PAGE = 1
 export const DEFAULT_LIMIT = 24
+export const ADMIN_PAGE_SIZE = 20
 export const MAX_LIMIT = 100

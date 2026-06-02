@@ -8,9 +8,26 @@ import { parseFileExtension } from '@/lib/format-file-size'
 import { connectToDatabase } from '@/lib/mongodb'
 import { requireAuth } from '@/lib/require-auth'
 import { getSessionUserId, isSessionUser } from '@/lib/session-user'
+import {
+  ADMIN_PAGE_SIZE,
+  buildTextSearchFilter,
+  paginateQuery,
+  parsePaginationParams,
+  parseSearchQuery,
+} from '@/lib/pagination/server'
 import GalleryItem from '@/models/gallery-item'
 
 const DEFAULT_LIST_LIMIT = 100
+
+const GALLERY_SEARCH_FIELDS = [
+  'title',
+  'description',
+  'creatorName',
+  'creatorEmail',
+  'originalFilename',
+  'mediaFilename',
+  'tags',
+] as const
 
 export async function GET(request: Request) {
   try {
@@ -18,11 +35,6 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    const limitParam = searchParams.get('limit')
-    const limit = Math.min(
-      Math.max(Number(limitParam) || DEFAULT_LIST_LIMIT, 1),
-      200
-    )
 
     if (userId) {
       const session = await getServerAuthSession()
@@ -40,13 +52,24 @@ export async function GET(request: Request) {
       }
 
       const ownerId = isSelf ? sessionUserId : userId
-      const items = await GalleryItem.find({ userId: ownerId })
-        .sort({ createdAt: -1 })
-        .limit(limit)
-        .lean()
+      const pagination = parsePaginationParams(searchParams, ADMIN_PAGE_SIZE)
+      const search = parseSearchQuery(searchParams)
+      const searchFilter = buildTextSearchFilter(search, GALLERY_SEARCH_FIELDS)
 
-      return NextResponse.json(items)
+      const result = await paginateQuery(
+        GalleryItem,
+        { userId: ownerId, ...searchFilter },
+        pagination
+      )
+
+      return NextResponse.json(result)
     }
+
+    const limitParam = searchParams.get('limit')
+    const limit = Math.min(
+      Math.max(Number(limitParam) || DEFAULT_LIST_LIMIT, 1),
+      200
+    )
 
     const items = await GalleryItem.find(publicGalleryFilter)
       .sort({ createdAt: -1 })

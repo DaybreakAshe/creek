@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { Link } from '@/i18n/navigation'
@@ -13,6 +13,8 @@ import { formatFileSize } from '@/lib/format-file-size'
 import { loginRedirectPath } from '@/lib/locale-path'
 import type { GalleryItemRecord } from '@/lib/gallery-types'
 import type { Locale } from '@/i18n/routing'
+import { usePaginatedPage } from '@/hooks/use-paginated-page'
+import { PaginationControls } from '@/components/ui/pagination-controls'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -30,6 +32,8 @@ interface GalleryManageContentProps {
   scope: GalleryManageScope
 }
 
+const SEARCH_DEBOUNCE_MS = 300
+
 export function GalleryManageContent({ scope }: GalleryManageContentProps) {
   const t = useTranslations('gallery.manage')
   const tGallery = useTranslations('home.gallery')
@@ -39,58 +43,68 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
   const locale = useLocale() as Locale
   const { data: session, status } = useSession()
 
-  const [items, setItems] = useState<GalleryItemRecord[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [actionError, setActionError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<GalleryItemRecord | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
 
-  const fetchItems = useCallback(async () => {
-    try {
-      setError(null)
-      const url =
-        scope === 'admin'
-          ? '/api/admin/gallery'
-          : `/api/gallery?userId=${encodeURIComponent(session!.user!.id)}`
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+    }, SEARCH_DEBOUNCE_MS)
 
-      const response = await fetch(url)
-      const data = await response.json().catch(() => ({}))
-
-      if (!response.ok) {
-        throw new Error(
-          getApiErrorMessage(
-            tErrors,
-            typeof data.error === 'string' ? data.error : undefined,
-            'fetchGalleryFailed'
-          )
-        )
-      }
-
-      setItems(data as GalleryItemRecord[])
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : getApiErrorMessage(tErrors, undefined, 'fetchGalleryFailed')
-      )
-    } finally {
-      setLoading(false)
-    }
-  }, [scope, session?.user?.id, tErrors])
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
 
   useEffect(() => {
     if (status === 'loading') return
     if (status === 'unauthenticated') {
       const path = scope === 'admin' ? '/admin/gallery' : '/gallery/mine'
       window.location.href = loginRedirectPath(path, locale)
-      return
     }
-    if (!session?.user?.id && scope === 'mine') return
-    fetchItems()
-  }, [status, session?.user?.id, scope, locale, fetchItems])
+  }, [status, scope, locale])
+
+  const listEnabled =
+    status === 'authenticated' &&
+    (scope === 'admin' || Boolean(session?.user?.id))
+
+  const listQuery = useMemo(
+    () =>
+      scope === 'mine' && session?.user?.id
+        ? { userId: session.user.id }
+        : {},
+    [scope, session?.user?.id]
+  )
+
+  const {
+    items,
+    pagination,
+    loading,
+    error: listError,
+    page,
+    setPage,
+    refresh,
+  } = usePaginatedPage<GalleryItemRecord>({
+    basePath: scope === 'admin' ? '/api/admin/gallery' : '/api/gallery',
+    query: listQuery,
+    search: debouncedSearch,
+    enabled: listEnabled,
+    resetDeps: [scope, session?.user?.id],
+  })
+
+  const error =
+    actionError ??
+    (listError
+      ? getApiErrorMessage(tErrors, listError, 'fetchGalleryFailed')
+      : null)
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const handleDeleteRequest = (item: GalleryItemRecord) => {
     setPendingDelete(item)
@@ -101,6 +115,7 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
     if (!pendingDelete?._id) return
     setDeleting(true)
     try {
+      setActionError(null)
       const response = await fetch(`/api/gallery/${pendingDelete._id}`, {
         method: 'DELETE',
       })
@@ -116,9 +131,9 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
       }
       setDeleteDialogOpen(false)
       setPendingDelete(null)
-      await fetchItems()
+      refresh()
     } catch (err) {
-      setError(
+      setActionError(
         err instanceof Error
           ? err.message
           : getApiErrorMessage(tErrors, undefined, 'deleteGalleryFailed')
@@ -132,6 +147,7 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
     if (!item._id) return
     setTogglingId(item._id)
     try {
+      setActionError(null)
       const response = await fetch(`/api/gallery/${item._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -147,9 +163,9 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
           )
         )
       }
-      await fetchItems()
+      refresh()
     } catch (err) {
-      setError(
+      setActionError(
         err instanceof Error
           ? err.message
           : getApiErrorMessage(tErrors, undefined, 'updateGalleryFailed')
@@ -159,20 +175,10 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
     }
   }
 
-  const filteredItems = items.filter((item) => {
-    const q = searchQuery.toLowerCase()
-    return (
-      item.title.toLowerCase().includes(q) ||
-      item.description?.toLowerCase().includes(q) ||
-      item.creatorName?.toLowerCase().includes(q) ||
-      item.creatorEmail?.toLowerCase().includes(q) ||
-      item.userId?.toLowerCase().includes(q) ||
-      item.originalFilename?.toLowerCase().includes(q) ||
-      item.tags?.some((tag) => tag.toLowerCase().includes(q))
-    )
-  })
+  const totalCount = pagination?.total ?? 0
+  const totalPages = pagination?.totalPages ?? 0
 
-  if (loading) {
+  if (loading || status === 'loading') {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <p className="text-muted-foreground">{tCommon('loading')}</p>
@@ -190,7 +196,7 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
             {scope === 'admin' ? t('adminTitle') : t('mineTitle')}
           </h1>
           <p className="text-muted-foreground text-sm">
-            {t('itemsCount', { count: items.length })}
+            {t('itemsCount', { count: totalCount })}
           </p>
         </div>
         {scope === 'mine' && (
@@ -216,139 +222,149 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
         </p>
       )}
 
-      {filteredItems.length === 0 ? (
+      {items.length === 0 ? (
         <div className="rounded-xl border py-12 text-center">
           <p className="text-muted-foreground">
-            {searchQuery ? t('noMatch') : t('empty')}
+            {debouncedSearch ? t('noMatch') : t('empty')}
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1100px] text-sm">
-              <thead>
-                <tr className="bg-muted/50 border-b text-left">
-                  <th className="px-4 py-3 font-medium">{t('preview')}</th>
-                  <th className="px-4 py-3 font-medium">{t('title')}</th>
-                  <th className="px-4 py-3 font-medium">{t('type')}</th>
-                  <th className="px-4 py-3 font-medium">{t('public')}</th>
-                  {scope === 'admin' && (
-                    <>
-                      <th className="px-4 py-3 font-medium">{t('creator')}</th>
-                      <th className="px-4 py-3 font-medium">{tProfile('userId')}</th>
-                    </>
-                  )}
-                  <th className="px-4 py-3 font-medium">{t('fileInfo')}</th>
-                  <th className="px-4 py-3 font-medium">{t('createdAt')}</th>
-                  <th className="px-4 py-3 text-right font-medium">{t('actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.map((item) => (
-                  <tr key={item._id} className="border-b last:border-b-0">
-                    <td className="px-4 py-3">
-                      <a
-                        href={item.mediaUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-muted block size-14 overflow-hidden rounded-md"
-                      >
-                        {item.type === 'image' ? (
-                          <img
-                            src={item.mediaUrl}
-                            alt=""
-                            className="size-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-muted-foreground flex size-full items-center justify-center text-xs">
-                            {tGallery(`types.${item.type}`)}
-                          </span>
-                        )}
-                      </a>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="max-w-[160px] font-medium">{item.title}</p>
-                      {item.description ? (
-                        <p className="text-muted-foreground mt-0.5 max-w-[180px] truncate text-xs">
-                          {item.description}
-                        </p>
-                      ) : null}
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3 whitespace-nowrap">
-                      {tGallery(`types.${item.type}`)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={togglingId === item._id}
-                        onClick={() => handleTogglePublic(item)}
-                      >
-                        {item.isPublic ? tCommon('yes') : tCommon('no')}
-                      </Button>
-                    </td>
+        <div className="space-y-4">
+          <div className="overflow-hidden rounded-xl border">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1100px] text-sm">
+                <thead>
+                  <tr className="bg-muted/50 border-b text-left">
+                    <th className="px-4 py-3 font-medium">{t('preview')}</th>
+                    <th className="px-4 py-3 font-medium">{t('title')}</th>
+                    <th className="px-4 py-3 font-medium">{t('type')}</th>
+                    <th className="px-4 py-3 font-medium">{t('public')}</th>
                     {scope === 'admin' && (
                       <>
-                        <td className="px-4 py-3">
-                          <p className="max-w-[120px] truncate">
-                            {item.creatorName || '-'}
-                          </p>
-                          <p className="text-muted-foreground max-w-[140px] truncate text-xs">
-                            {item.creatorEmail || '-'}
-                          </p>
-                        </td>
-                        <td className="px-4 py-3 font-mono text-xs break-all">
-                          {item.userId}
-                        </td>
+                        <th className="px-4 py-3 font-medium">{t('creator')}</th>
+                        <th className="px-4 py-3 font-medium">{tProfile('userId')}</th>
                       </>
                     )}
-                    <td className="text-muted-foreground px-4 py-3 text-xs">
-                      <p className="max-w-[160px] truncate">
-                        {item.originalFilename || item.mediaFilename || '-'}
-                      </p>
-                      <p className="mt-0.5">
-                        {item.fileExtension ? `.${item.fileExtension}` : '-'}
-                        {item.fileSize
-                          ? ` · ${formatFileSize(item.fileSize, locale)}`
-                          : ''}
-                      </p>
-                      <p className="mt-0.5 max-w-[160px] truncate">
-                        {item.mimeType || '-'}
-                      </p>
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3 whitespace-nowrap">
-                      {item.createdAt
-                        ? formatDateTime(item.createdAt, locale)
-                        : '-'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" asChild>
-                          <a
-                            href={item.mediaUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={t('view', { title: item.title })}
-                          >
-                            <ExternalLink className="size-4" />
-                          </a>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t('delete', { title: item.title })}
-                          onClick={() => handleDeleteRequest(item)}
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </td>
+                    <th className="px-4 py-3 font-medium">{t('fileInfo')}</th>
+                    <th className="px-4 py-3 font-medium">{t('createdAt')}</th>
+                    <th className="px-4 py-3 text-right font-medium">{t('actions')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item._id} className="border-b last:border-b-0">
+                      <td className="px-4 py-3">
+                        <a
+                          href={item.mediaUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-muted block size-14 overflow-hidden rounded-md"
+                        >
+                          {item.type === 'image' ? (
+                            <img
+                              src={item.mediaUrl}
+                              alt=""
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-muted-foreground flex size-full items-center justify-center text-xs">
+                              {tGallery(`types.${item.type}`)}
+                            </span>
+                          )}
+                        </a>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="max-w-[160px] font-medium">{item.title}</p>
+                        {item.description ? (
+                          <p className="text-muted-foreground mt-0.5 max-w-[180px] truncate text-xs">
+                            {item.description}
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="text-muted-foreground px-4 py-3 whitespace-nowrap">
+                        {tGallery(`types.${item.type}`)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={togglingId === item._id}
+                          onClick={() => handleTogglePublic(item)}
+                        >
+                          {item.isPublic ? tCommon('yes') : tCommon('no')}
+                        </Button>
+                      </td>
+                      {scope === 'admin' && (
+                        <>
+                          <td className="px-4 py-3">
+                            <p className="max-w-[120px] truncate">
+                              {item.creatorName || '-'}
+                            </p>
+                            <p className="text-muted-foreground max-w-[140px] truncate text-xs">
+                              {item.creatorEmail || '-'}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-xs break-all">
+                            {item.userId}
+                          </td>
+                        </>
+                      )}
+                      <td className="text-muted-foreground px-4 py-3 text-xs">
+                        <p className="max-w-[160px] truncate">
+                          {item.originalFilename || item.mediaFilename || '-'}
+                        </p>
+                        <p className="mt-0.5">
+                          {item.fileExtension ? `.${item.fileExtension}` : '-'}
+                          {item.fileSize
+                            ? ` · ${formatFileSize(item.fileSize, locale)}`
+                            : ''}
+                        </p>
+                        <p className="mt-0.5 max-w-[160px] truncate">
+                          {item.mimeType || '-'}
+                        </p>
+                      </td>
+                      <td className="text-muted-foreground px-4 py-3 whitespace-nowrap">
+                        {item.createdAt
+                          ? formatDateTime(item.createdAt, locale)
+                          : '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" asChild>
+                            <a
+                              href={item.mediaUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={t('view', { title: item.title })}
+                            >
+                              <ExternalLink className="size-4" />
+                            </a>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t('delete', { title: item.title })}
+                            onClick={() => handleDeleteRequest(item)}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            total={totalCount}
+            disabled={loading}
+            onPageChange={handlePageChange}
+          />
         </div>
       )}
 

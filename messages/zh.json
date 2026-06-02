@@ -14,7 +14,12 @@
     "backHome": "返回首页",
     "yes": "是",
     "no": "否",
-    "close": "关闭"
+    "close": "关闭",
+    "prevPage": "上一页",
+    "nextPage": "下一页",
+    "paginationNav": "分页导航",
+    "paginationTotal": "共 {total} 条",
+    "paginationSummary": "第 {page} / {totalPages} 页，共 {total} 条"
   },
   "nav": {
     "mainNav": "主导航",

@@ -1,5 +1,6 @@
 import type { FilterQuery, Model } from 'mongoose'
 import {
+  ADMIN_PAGE_SIZE,
   DEFAULT_LIMIT,
   DEFAULT_PAGE,
   MAX_LIMIT,
@@ -7,6 +8,8 @@ import {
   type PaginationMeta,
   type PaginationParams,
 } from '@/lib/pagination/types'
+
+export { ADMIN_PAGE_SIZE }
 
 export function parsePaginationParams(
   searchParams: URLSearchParams,

@@ -14,7 +14,12 @@
     "backHome": "Back to Home",
     "yes": "Yes",
     "no": "No",
-    "close": "Close"
+    "close": "Close",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "paginationNav": "Pagination",
+    "paginationTotal": "{total} items",
+    "paginationSummary": "Page {page} of {totalPages}, {total} items"
   },
   "nav": {
     "mainNav": "Main navigation",
