@@ -28,7 +28,7 @@ const variantClasses: Record<
   },
   plain: {
     image:
-      'object-contain shadow-sm shadow-black/10 dark:shadow-black/30',
+      'object-contain',
     fallback: 'bg-transparent text-muted-foreground shadow-none ring-0',
   },
 }
