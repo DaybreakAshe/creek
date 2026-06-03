@@ -15,6 +15,7 @@
 | 数据库 | [MongoDB](https://www.mongodb.com/) + Mongoose |
 | 国际化 | [next-intl](https://next-intl.dev/)（中文 / 英文） |
 | 数据请求 | SWR |
+| AI | [Vercel AI SDK](https://ai-sdk.dev/) + [@ai-sdk/google](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai)（Gemini） |
 | 主题 | next-themes（亮色 / 暗色 / 跟随系统） |
 
 ## 环境要求
@@ -53,8 +54,12 @@ cp .env.example .env.local
 | `SIRV_CLIENT_ID` | Sirv API Client ID |
 | `SIRV_CLIENT_SECRET` | Sirv API Client Secret |
 | `SIRV_CDN_URL` | Sirv CDN 域名（如 `your-account.sirv.com`） |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) 的 Gemini API Key（AI 聊天） |
+| `GEMINI_MODEL` | 可选，Gemini 模型 ID，默认 `gemini-2.5-flash` |
 
 Google OAuth 与 NextAuth 的详细配置步骤见 [README_AUTH.md](./README_AUTH.md)。
+
+AI 聊天后端：`POST /api/chat`（需登录），请求体为 `{ messages: UIMessage[] }`，响应为 UI Message Stream，供后续 `useChat` 使用。
 
 ### 3. 启动开发服务器
 
