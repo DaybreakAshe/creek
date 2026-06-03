@@ -29,6 +29,7 @@
     "home": "首页",
     "about": "关于",
     "tools": "工具",
+    "chat": "聊天",
     "login": "登录",
     "backHomeAria": "返回首页",
     "sendEmail": "发送邮件",
@@ -47,6 +48,40 @@
   },
   "theme": {
     "toggle": "切换主题"
+  },
+  "chat": {
+    "title": "AI 助手",
+    "subtitle": "基于 Gemini，支持流式对话与 Markdown",
+    "loading": "加载中...",
+    "newChat": "新对话",
+    "newChatTitle": "新对话",
+    "history": "历史记录",
+    "noHistory": "暂无历史对话",
+    "deleteChat": "删除对话",
+    "closeSidebar": "关闭侧栏",
+    "toggleSidebar": "切换侧栏",
+    "loginRequired": "登录后即可使用 AI 聊天功能。",
+    "loginButton": "去登录",
+    "emptyTitle": "有什么可以帮你的？",
+    "emptyDescription": "可以问我关于 Creek、工具推荐、创作灵感等问题。",
+    "inputPlaceholder": "输入消息，Enter 发送，Shift+Enter 换行",
+    "send": "发送",
+    "stop": "停止生成",
+    "disclaimer": "AI 回复仅供参考，重要信息请自行核实。",
+    "you": "你",
+    "assistant": "Creek AI",
+    "copy": "复制",
+    "copied": "已复制",
+    "regenerate": "重新生成",
+    "unsupportedPart": "暂不支持展示该消息类型",
+    "errorGeneric": "出错了，请稍后重试",
+    "dismiss": "关闭",
+    "suggestions": {
+      "intro": "介绍一下 Creek 网站是做什么的？",
+      "tools": "推荐几个适合设计师的在线工具",
+      "gallery": "如何上传和管理我的作品集？",
+      "creative": "给我三个首页视觉设计的灵感"
+    }
   },
   "home": {
     "title": "首页",

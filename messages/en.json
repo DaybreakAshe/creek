@@ -29,6 +29,7 @@
     "home": "Home",
     "about": "About",
     "tools": "Tools",
+    "chat": "Chat",
     "login": "Login",
     "backHomeAria": "Back to home",
     "sendEmail": "Send Email",
@@ -47,6 +48,40 @@
   },
   "theme": {
     "toggle": "Toggle theme"
+  },
+  "chat": {
+    "title": "AI Assistant",
+    "subtitle": "Powered by Gemini with streaming and Markdown",
+    "loading": "Loading...",
+    "newChat": "New chat",
+    "newChatTitle": "New chat",
+    "history": "History",
+    "noHistory": "No conversations yet",
+    "deleteChat": "Delete chat",
+    "closeSidebar": "Close sidebar",
+    "toggleSidebar": "Toggle sidebar",
+    "loginRequired": "Sign in to use AI chat.",
+    "loginButton": "Sign in",
+    "emptyTitle": "How can I help?",
+    "emptyDescription": "Ask about Creek, tool recommendations, creative ideas, and more.",
+    "inputPlaceholder": "Type a message. Enter to send, Shift+Enter for newline",
+    "send": "Send",
+    "stop": "Stop generating",
+    "disclaimer": "AI responses are for reference only. Verify important information.",
+    "you": "You",
+    "assistant": "Creek AI",
+    "copy": "Copy",
+    "copied": "Copied",
+    "regenerate": "Regenerate",
+    "unsupportedPart": "This message type is not supported yet",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "dismiss": "Dismiss",
+    "suggestions": {
+      "intro": "What is Creek and what can I do here?",
+      "tools": "Recommend a few online tools for designers",
+      "gallery": "How do I upload and manage my portfolio?",
+      "creative": "Give me three ideas for homepage visual design"
+    }
   },
   "home": {
     "title": "Home",
