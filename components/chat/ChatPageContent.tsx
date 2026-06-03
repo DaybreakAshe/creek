@@ -31,7 +31,7 @@ function createDraftChatId() {
 }
 
 interface ChatPageContentProps {
-  /** 路由中的会话 id；省略表示新对话草稿（地址栏为 /chat） */
+  /** 路由中的会话 id；省略表示新对话（地址栏保持 /chat） */
   chatId?: string
 }
 
@@ -41,9 +41,9 @@ export function ChatPageContent({ chatId: routeChatId }: ChatPageContentProps) {
   const { data: session, status: authStatus } = useSession()
   const userId = session?.user?.id
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [promotedDraftId, setPromotedDraftId] = useState<string | null>(null)
+  const [draftChatId, setDraftChatId] = useState(createDraftChatId)
+  const sessionCreatedRef = useRef(false)
   const invalidRouteRef = useRef(false)
-  const draftIdRef = useRef(createDraftChatId())
 
   const {
     sessions,
@@ -58,18 +58,7 @@ export function ChatPageContent({ chatId: routeChatId }: ChatPageContentProps) {
   } = useChatSessionsContext()
 
   const isDraft = !routeChatId
-  const activeChatId = routeChatId ?? draftIdRef.current
-  /** 新对话草稿或刚从草稿提升：无历史可拉，避免用临时 id 请求 404 */
-  const skipHistoryFetch =
-    isDraft || (!!routeChatId && promotedDraftId === routeChatId)
-
-  useEffect(() => {
-    if (!routeChatId) {
-      draftIdRef.current = createDraftChatId()
-      setPromotedDraftId(null)
-      invalidRouteRef.current = false
-    }
-  }, [routeChatId])
+  const activeChatId = routeChatId ?? draftChatId
 
   const navigateToChat = useCallback(
     (id: string, options?: { replace?: boolean }) => {
@@ -83,10 +72,9 @@ export function ChatPageContent({ chatId: routeChatId }: ChatPageContentProps) {
     [router]
   )
 
-  /** 后台校验直链会话；失败则静默跳回新对话，不挡主区域 */
+  /** 直链打开 /chat/{id} 时后台校验会话是否存在 */
   useEffect(() => {
     if (!hydrated || !userId || !routeChatId || routeChatId === 'new') return
-    if (routeChatId === promotedDraftId) return
     if (sessions.some((s) => s.id === routeChatId)) return
     if (invalidRouteRef.current) return
 
@@ -104,18 +92,19 @@ export function ChatPageContent({ chatId: routeChatId }: ChatPageContentProps) {
     return () => {
       cancelled = true
     }
-  }, [hydrated, userId, routeChatId, promotedDraftId, sessions, ensureSession, router])
+  }, [hydrated, userId, routeChatId, sessions, ensureSession, router])
 
   const handleNewChat = useCallback(() => {
     setSidebarOpen(false)
-    setPromotedDraftId(null)
-    if (isDraft) return
-    router.replace('/chat')
+    setDraftChatId(createDraftChatId())
+    sessionCreatedRef.current = false
+    if (!isDraft) {
+      router.replace('/chat')
+    }
   }, [isDraft, router])
 
   const handleSelectSession = useCallback(
     (id: string) => {
-      setPromotedDraftId(null)
       if (id !== routeChatId) {
         navigateToChat(id, { replace: true })
       }
@@ -126,13 +115,17 @@ export function ChatPageContent({ chatId: routeChatId }: ChatPageContentProps) {
 
   const handleDeleteSession = useCallback(
     async (id: string) => {
-      const wasActive = id === routeChatId
+      const wasActive = id === routeChatId || (isDraft && id === activeChatId)
       const remaining = sessions.filter((s) => s.id !== id)
       await deleteSession(id)
 
       if (!wasActive) return
 
-      setPromotedDraftId(null)
+      if (isDraft) {
+        setDraftChatId(createDraftChatId())
+        sessionCreatedRef.current = false
+        return
+      }
 
       if (remaining[0]) {
         navigateToChat(remaining[0].id, { replace: true })
@@ -141,22 +134,21 @@ export function ChatPageContent({ chatId: routeChatId }: ChatPageContentProps) {
 
       router.replace('/chat')
     },
-    [routeChatId, sessions, deleteSession, navigateToChat, router]
+    [routeChatId, isDraft, activeChatId, sessions, deleteSession, navigateToChat, router]
   )
 
   const handlePersist = useCallback(
     async (persistChatId: string, messages: UIMessage[]) => {
       if (messages.length === 0) return
 
-      if (isDraft) {
-        setPromotedDraftId(persistChatId)
-        navigateToChat(persistChatId, { replace: true })
+      if (isDraft && !sessionCreatedRef.current) {
+        sessionCreatedRef.current = true
         await createSession(persistChatId)
       }
 
       await saveMessages(persistChatId, messages)
     },
-    [isDraft, createSession, navigateToChat, saveMessages]
+    [isDraft, createSession, saveMessages]
   )
 
   const sidebarProps = {
@@ -208,9 +200,10 @@ export function ChatPageContent({ chatId: routeChatId }: ChatPageContentProps) {
         </div>
 
         <ChatConversation
+          key={routeChatId ?? draftChatId}
           chatId={activeChatId}
-          skipHistoryFetch={skipHistoryFetch}
-          onMessagesPersist={(id, messages) => void handlePersist(id, messages)}
+          loadHistoryFromServer={Boolean(routeChatId)}
+          onMessagesPersist={handlePersist}
         />
       </div>
 

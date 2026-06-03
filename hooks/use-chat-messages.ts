@@ -14,61 +14,48 @@ const emptyPagination = (): PaginationMeta => ({
   hasMore: false,
 })
 
-export function useChatMessages(sessionId: string | null) {
+export function useChatMessages(sessionId: string) {
   const [messages, setMessages] = useState<UIMessage[]>([])
   const [pagination, setPagination] = useState<PaginationMeta>(emptyPagination)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [loadingEarlier, setLoadingEarlier] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
-  const loadInitial = useCallback(async (id: string) => {
+  const loadInitial = useCallback(async (id: string, requestId: number) => {
     setLoading(true)
     setError(null)
     try {
       const result = await fetchChatMessages(id, 1, CHAT_MESSAGE_PAGE_SIZE, 'desc')
+      if (requestId !== requestIdRef.current) return
       setMessages(result.items)
       setPagination(result.pagination)
     } catch (err) {
-      setMessages([])
-      setPagination(emptyPagination())
-      setError(err instanceof Error ? err.message : 'unknown')
+      if (requestId !== requestIdRef.current) return
+      const code = err instanceof Error ? err.message : ''
+      if (code === 'chatSessionNotFound') {
+        setMessages([])
+        setPagination(emptyPagination())
+        setError(null)
+      } else {
+        setMessages([])
+        setPagination(emptyPagination())
+        setError(code || 'unknown')
+      }
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
+      }
     }
   }, [])
 
-  const requestIdRef = useRef(0)
-  const inflightRef = useRef<Map<string, Promise<void>>>(new Map())
-
   useEffect(() => {
-    if (!sessionId) {
-      setMessages([])
-      setPagination(emptyPagination())
-      setError(null)
-      setLoading(false)
-      return
-    }
-
-    setMessages([])
-    setPagination(emptyPagination())
-    setError(null)
-
     const requestId = ++requestIdRef.current
-    let inflight = inflightRef.current.get(sessionId)
-    if (!inflight) {
-      inflight = loadInitial(sessionId).finally(() => {
-        inflightRef.current.delete(sessionId)
-      })
-      inflightRef.current.set(sessionId, inflight)
-    }
-
-    void inflight.then(() => {
-      if (requestId !== requestIdRef.current) return
-    })
+    void loadInitial(sessionId, requestId)
   }, [sessionId, loadInitial])
 
   const loadEarlierMessages = useCallback(async () => {
-    if (!sessionId || !pagination.hasMore || loadingEarlier) return
+    if (!pagination.hasMore || loadingEarlier) return
 
     setLoadingEarlier(true)
     try {

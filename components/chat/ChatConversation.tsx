@@ -11,10 +11,12 @@ import { ChatMessageList } from '@/components/chat/ChatMessageList'
 import { ChatInput } from '@/components/chat/ChatInput'
 import { Button } from '@/components/ui/button'
 
+const EMPTY_MESSAGES: UIMessage[] = []
+
 interface ChatConversationProps {
   chatId: string
-  /** 草稿对话尚未写入服务端，跳过拉取历史以免覆盖流式状态 */
-  skipHistoryFetch?: boolean
+  /** 仅在为 true 时从服务端拉历史（侧栏点选或直链 /chat/{id}） */
+  loadHistoryFromServer?: boolean
   onMessagesPersist: (chatId: string, messages: UIMessage[]) => void
 }
 
@@ -38,6 +40,8 @@ function ChatConversationInner({
   const t = useTranslations('chat')
   const [input, setInput] = useState('')
   const skipInitialPersistRef = useRef(true)
+  const initialMessagesRef = useRef(initialMessages)
+  initialMessagesRef.current = initialMessages
 
   const { messages, sendMessage, status, stop, regenerate, error, clearError } =
     useChat({
@@ -75,12 +79,13 @@ function ChatConversationInner({
 
     if (skipInitialPersistRef.current) {
       skipInitialPersistRef.current = false
+      const initial = initialMessagesRef.current
       if (
-        messages.length === initialMessages.length &&
+        messages.length === initial.length &&
         messages.every(
           (m, i) =>
-            m.id === initialMessages[i]?.id &&
-            JSON.stringify(m.parts) === JSON.stringify(initialMessages[i]?.parts)
+            m.id === initial[i]?.id &&
+            JSON.stringify(m.parts) === JSON.stringify(initial[i]?.parts)
         )
       ) {
         return
@@ -92,7 +97,7 @@ function ChatConversationInner({
     }, 400)
 
     return () => window.clearTimeout(timer)
-  }, [chatId, initialMessages, messages, onMessagesPersist])
+  }, [chatId, messages, onMessagesPersist])
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -129,11 +134,27 @@ function ChatConversationInner({
   )
 }
 
-export function ChatConversation({
+/** 新对话 /chat：不挂载 useChatMessages，消息仅存在 useChat 本地 */
+function ChatConversationLocal({
   chatId,
-  skipHistoryFetch = false,
   onMessagesPersist,
-}: ChatConversationProps) {
+}: Omit<ChatConversationProps, 'loadHistoryFromServer'>) {
+  return (
+    <ChatConversationInner
+      chatId={chatId}
+      initialMessages={EMPTY_MESSAGES}
+      onMessagesPersist={onMessagesPersist}
+      hasEarlierMessages={false}
+      loadingEarlier={false}
+      onLoadEarlier={() => {}}
+    />
+  )
+}
+
+function ChatConversationWithHistory({
+  chatId,
+  onMessagesPersist,
+}: Omit<ChatConversationProps, 'loadHistoryFromServer'>) {
   const t = useTranslations('chat')
 
   const {
@@ -143,7 +164,7 @@ export function ChatConversation({
     hasEarlierMessages,
     loadEarlierMessages,
     error: messagesError,
-  } = useChatMessages(skipHistoryFetch ? null : chatId)
+  } = useChatMessages(chatId)
 
   if (messagesError) {
     return (
@@ -170,5 +191,21 @@ export function ChatConversation({
       loadingEarlier={loadingEarlier}
       onLoadEarlier={() => void loadEarlierMessages()}
     />
+  )
+}
+
+export function ChatConversation({
+  chatId,
+  loadHistoryFromServer = false,
+  onMessagesPersist,
+}: ChatConversationProps) {
+  if (!loadHistoryFromServer) {
+    return (
+      <ChatConversationLocal chatId={chatId} onMessagesPersist={onMessagesPersist} />
+    )
+  }
+
+  return (
+    <ChatConversationWithHistory chatId={chatId} onMessagesPersist={onMessagesPersist} />
   )
 }
