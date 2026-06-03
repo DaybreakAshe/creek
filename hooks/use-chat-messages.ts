@@ -49,6 +49,10 @@ export function useChatMessages(sessionId: string | null) {
       return
     }
 
+    setMessages([])
+    setPagination(emptyPagination())
+    setError(null)
+
     const requestId = ++requestIdRef.current
     let inflight = inflightRef.current.get(sessionId)
     if (!inflight) {

@@ -19,16 +19,17 @@ interface ChatConversationProps {
 interface ChatConversationInnerProps {
   chatId: string
   initialMessages: UIMessage[]
+  historyReady: boolean
   onMessagesPersist: (chatId: string, messages: UIMessage[]) => void
   hasEarlierMessages: boolean
   loadingEarlier: boolean
   onLoadEarlier: () => void
 }
 
-/** 等历史消息加载完成后再挂载 useChat，避免用空数组初始化后无法显示已拉取的消息。 */
 function ChatConversationInner({
   chatId,
   initialMessages,
+  historyReady,
   onMessagesPersist,
   hasEarlierMessages,
   loadingEarlier,
@@ -36,13 +37,24 @@ function ChatConversationInner({
 }: ChatConversationInnerProps) {
   const t = useTranslations('chat')
   const [input, setInput] = useState('')
+  const skipInitialPersistRef = useRef(true)
 
-  const { messages, sendMessage, status, stop, regenerate, error, clearError } =
+  const { messages, setMessages, sendMessage, status, stop, regenerate, error, clearError } =
     useChat({
       id: chatId,
       messages: initialMessages,
       transport: getChatTransport(),
     })
+
+  useEffect(() => {
+    skipInitialPersistRef.current = true
+  }, [chatId])
+
+  useEffect(() => {
+    if (!historyReady) return
+    setMessages(initialMessages)
+    skipInitialPersistRef.current = true
+  }, [chatId, historyReady, initialMessages, setMessages])
 
   const handleSubmit = useCallback(async () => {
     const text = input.trim()
@@ -63,8 +75,6 @@ function ChatConversationInner({
   const handleRegenerate = useCallback(() => {
     regenerate()
   }, [regenerate])
-
-  const skipInitialPersistRef = useRef(true)
 
   useEffect(() => {
     if (messages.length === 0) return
@@ -140,14 +150,6 @@ export function ChatConversation({
     error: messagesError,
   } = useChatMessages(chatId)
 
-  if (messagesLoading) {
-    return (
-      <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
-        {t('loading')}
-      </div>
-    )
-  }
-
   if (messagesError) {
     return (
       <div className="text-muted-foreground flex flex-1 items-center justify-center px-4 text-center text-sm">
@@ -157,14 +159,21 @@ export function ChatConversation({
   }
 
   return (
-    <ChatConversationInner
-      key={chatId}
-      chatId={chatId}
-      initialMessages={loadedMessages}
-      onMessagesPersist={onMessagesPersist}
-      hasEarlierMessages={hasEarlierMessages}
-      loadingEarlier={loadingEarlier}
-      onLoadEarlier={() => void loadEarlierMessages()}
-    />
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+      {messagesLoading && (
+        <div className="bg-background/70 text-muted-foreground pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-sm">
+          {t('loading')}
+        </div>
+      )}
+      <ChatConversationInner
+        chatId={chatId}
+        initialMessages={loadedMessages}
+        historyReady={!messagesLoading}
+        onMessagesPersist={onMessagesPersist}
+        hasEarlierMessages={hasEarlierMessages}
+        loadingEarlier={loadingEarlier}
+        onLoadEarlier={() => void loadEarlierMessages()}
+      />
+    </div>
   )
 }

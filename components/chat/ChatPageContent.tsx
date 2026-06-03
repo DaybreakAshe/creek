@@ -221,11 +221,7 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
           </Button>
         </div>
 
-        <ChatConversation
-          key={chatId}
-          chatId={chatId}
-          onMessagesPersist={handlePersist}
-        />
+        <ChatConversation chatId={chatId} onMessagesPersist={handlePersist} />
       </div>
 
       <Dialog open={sidebarOpen} onOpenChange={setSidebarOpen}>

@@ -6,16 +6,15 @@ import { useTranslations } from 'next-intl'
 import { Check, Copy, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AssistantMessageContent } from '@/components/chat/AssistantMessageContent'
 import { ChatAssistantAvatar } from '@/components/chat/ChatAssistantAvatar'
+import { ChatUserAvatar } from '@/components/chat/ChatUserAvatar'
 import { ChatThinkingLabel } from '@/components/chat/ChatThinkingLabel'
 import {
   getMessageReasoning,
   getMessageText,
   hasUnsupportedParts,
 } from '@/lib/chat/message-utils'
-import { useCurrentUser } from '@/hooks/use-current-user'
 
 interface ChatMessageProps {
   message: UIMessage
@@ -31,7 +30,6 @@ function ChatMessageInner({
   canRegenerate,
 }: ChatMessageProps) {
   const t = useTranslations('chat')
-  const currentUser = useCurrentUser()
   const [copied, setCopied] = useState(false)
   const isUser = message.role === 'user'
   const text = getMessageText(message)
@@ -54,19 +52,7 @@ function ChatMessageInner({
         isUser ? 'bg-transparent' : 'bg-muted/30'
       )}
     >
-      {isUser ? (
-        <Avatar className="size-8 shrink-0">
-          <AvatarImage
-            src={currentUser?.avatar || undefined}
-            alt={currentUser?.name || t('you')}
-          />
-          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-            {currentUser?.name?.[0]?.toUpperCase() || 'U'}
-          </AvatarFallback>
-        </Avatar>
-      ) : (
-        <ChatAssistantAvatar />
-      )}
+      {isUser ? <ChatUserAvatar /> : <ChatAssistantAvatar />}
 
       <div className="min-w-0 flex-1 space-y-2">
         <p className="text-muted-foreground pointer-events-none text-xs font-medium select-none">
