@@ -1,5 +1,5 @@
-import { ChatPageContent } from '@/components/chat/ChatPageContent'
+import { ChatPageRedirect } from '@/components/chat/ChatPageRedirect'
 
 export default function ChatPage() {
-  return <ChatPageContent />
+  return <ChatPageRedirect />
 }

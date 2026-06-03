@@ -3,13 +3,18 @@
 import { useState } from 'react'
 import type { UIMessage } from '@/lib/chat/types'
 import { useTranslations } from 'next-intl'
-import { Bot, Check, Copy, RotateCcw } from 'lucide-react'
+import { Check, Copy, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ChatMarkdown } from '@/components/chat/ChatMarkdown'
-import { ChatTypingIndicator } from '@/components/chat/ChatTypingIndicator'
-import { getMessageText } from '@/lib/chat/message-utils'
+import { ChatAssistantAvatar } from '@/components/chat/ChatAssistantAvatar'
+import { ChatThinkingLabel } from '@/components/chat/ChatThinkingLabel'
+import {
+  getMessageReasoning,
+  getMessageText,
+  hasUnsupportedParts,
+} from '@/lib/chat/message-utils'
 import { useCurrentUser } from '@/hooks/use-current-user'
 
 interface ChatMessageProps {
@@ -30,8 +35,9 @@ export function ChatMessage({
   const [copied, setCopied] = useState(false)
   const isUser = message.role === 'user'
   const text = getMessageText(message)
-  const showTypingCursor =
-    !isUser && isStreaming && text.length === 0
+  const reasoning = getMessageReasoning(message)
+  const showThinking = !isUser && isStreaming && text.length === 0
+  const showUnsupported = hasUnsupportedParts(message)
 
   const handleCopy = async () => {
     if (!text) return
@@ -47,37 +53,44 @@ export function ChatMessage({
         isUser ? 'bg-transparent' : 'bg-muted/30'
       )}
     >
-      <Avatar className="size-8 shrink-0">
-        {isUser ? (
-          <>
-            <AvatarImage
-              src={currentUser?.avatar || undefined}
-              alt={currentUser?.name || t('you')}
-            />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-              {currentUser?.name?.[0]?.toUpperCase() || 'U'}
-            </AvatarFallback>
-          </>
-        ) : (
-          <AvatarFallback className="bg-secondary text-xs">
-            <Bot className="size-4" />
+      {isUser ? (
+        <Avatar className="size-8 shrink-0">
+          <AvatarImage
+            src={currentUser?.avatar || undefined}
+            alt={currentUser?.name || t('you')}
+          />
+          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+            {currentUser?.name?.[0]?.toUpperCase() || 'U'}
           </AvatarFallback>
-        )}
-      </Avatar>
+        </Avatar>
+      ) : (
+        <ChatAssistantAvatar />
+      )}
 
       <div className="min-w-0 flex-1 space-y-2">
         <p className="text-muted-foreground text-xs font-medium">
           {isUser ? t('you') : t('assistant')}
         </p>
 
+        {reasoning && !isStreaming && (
+          <details className="text-muted-foreground group/reasoning text-xs">
+            <summary className="cursor-pointer list-none marker:content-none [&::-webkit-details-marker]:hidden">
+              <span className="hover:text-foreground underline-offset-2 hover:underline">
+                {t('reasoning')}
+              </span>
+            </summary>
+            <p className="mt-2 leading-relaxed whitespace-pre-wrap">{reasoning}</p>
+          </details>
+        )}
+
         <div className="text-foreground">
-          {showTypingCursor ? (
-            <ChatTypingIndicator />
+          {showThinking ? (
+            <ChatThinkingLabel />
           ) : isUser ? (
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
-          ) : (
+          ) : text ? (
             <ChatMarkdown content={text} />
-          )}
+          ) : null}
           {!isUser && isStreaming && text.length > 0 && (
             <span className="bg-foreground ml-0.5 inline-block h-4 w-0.5 animate-pulse align-middle" />
           )}
@@ -114,7 +127,7 @@ export function ChatMessage({
           </div>
         )}
 
-        {message.parts.some((p) => p.type !== 'text') && (
+        {showUnsupported && (
           <p className="text-muted-foreground text-xs">{t('unsupportedPart')}</p>
         )}
       </div>

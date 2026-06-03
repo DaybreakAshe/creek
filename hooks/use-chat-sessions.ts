@@ -7,6 +7,7 @@ import {
   saveChatSessions,
   upsertSessionMessages,
 } from '@/lib/chat/storage'
+import { normalizeMessagesForStorage } from '@/lib/chat/message-utils'
 import type { ChatSession, UIMessage } from '@/lib/chat/types'
 
 function createChatId() {
@@ -76,7 +77,7 @@ export function useChatSessions(userId: string | undefined, newChatTitle: string
       const nextSessions = upsertSessionMessages(
         sessions,
         sessionId,
-        messages,
+        normalizeMessagesForStorage(messages),
         newChatTitle
       )
       persist(nextSessions, sessionId)
