@@ -1,9 +1,9 @@
-import { isTextUIPart, type UIMessage } from 'ai'
+import type { UIMessage } from '@/lib/chat/types'
 
 export function getMessageText(message: UIMessage): string {
   return message.parts
-    .filter(isTextUIPart)
-    .map((part) => part.text)
+    .filter((part) => part.type === 'text')
+    .map((part) => ('text' in part ? String(part.text) : ''))
     .join('')
 }
 

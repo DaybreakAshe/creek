@@ -1,4 +1,4 @@
-import type { UIMessage } from 'ai'
+import type { UIMessage } from '@/lib/chat/types'
 import type { ChatSession, ChatSessionsState } from '@/lib/chat/types'
 import { deriveChatTitle } from '@/lib/chat/message-utils'
 

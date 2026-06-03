@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { isTextUIPart, type UIMessage } from 'ai'
+import type { UIMessage } from '@/lib/chat/types'
 import { useTranslations } from 'next-intl'
 import { Bot, Check, Copy, RotateCcw, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -108,7 +108,7 @@ export function ChatMessage({
           </div>
         )}
 
-        {message.parts.some((p) => !isTextUIPart(p)) && (
+        {message.parts.some((p) => p.type !== 'text') && (
           <p className="text-muted-foreground text-xs">{t('unsupportedPart')}</p>
         )}
       </div>

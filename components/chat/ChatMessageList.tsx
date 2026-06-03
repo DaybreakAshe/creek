@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import type { UIMessage } from 'ai'
+import type { UIMessage } from '@/lib/chat/types'
 import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ChatEmptyState } from '@/components/chat/ChatEmptyState'
 

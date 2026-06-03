@@ -1,4 +1,6 @@
-import type { UIMessage } from 'ai'
+import type { UIMessage } from '@ai-sdk/react'
+
+export type { UIMessage }
 
 export type ChatSession = {
   id: string

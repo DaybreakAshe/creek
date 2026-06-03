@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { useTranslations } from 'next-intl'
+import { getChatTransport } from '@/lib/chat/client-transport'
 import { AlertCircle } from 'lucide-react'
-import type { UIMessage } from 'ai'
-import { chatTransport } from '@/lib/chat/transport'
+import type { UIMessage } from '@/lib/chat/types'
 import { ChatMessageList } from '@/components/chat/ChatMessageList'
 import { ChatInput } from '@/components/chat/ChatInput'
 import { Button } from '@/components/ui/button'
@@ -28,7 +28,7 @@ export function ChatConversation({
     useChat({
       id: chatId,
       messages: initialMessages,
-      transport: chatTransport,
+      transport: getChatTransport(),
     })
 
   const handleSubmit = useCallback(async () => {
@@ -48,9 +48,13 @@ export function ChatConversation({
   )
 
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length === 0) return
+
+    const timer = window.setTimeout(() => {
       onMessagesPersist(chatId, messages)
-    }
+    }, 400)
+
+    return () => window.clearTimeout(timer)
   }, [chatId, messages, onMessagesPersist])
 
   return (

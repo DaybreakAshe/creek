@@ -1,15 +1,17 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { generateId } from 'ai'
-import type { UIMessage } from 'ai'
 import {
   createEmptySession,
   loadChatSessions,
   saveChatSessions,
   upsertSessionMessages,
 } from '@/lib/chat/storage'
-import type { ChatSession } from '@/lib/chat/types'
+import type { ChatSession, UIMessage } from '@/lib/chat/types'
+
+function createChatId() {
+  return crypto.randomUUID()
+}
 
 export function useChatSessions(userId: string | undefined, newChatTitle: string) {
   const [sessions, setSessions] = useState<ChatSession[]>([])
@@ -45,7 +47,7 @@ export function useChatSessions(userId: string | undefined, newChatTitle: string
   )
 
   const createSession = useCallback(() => {
-    const id = generateId()
+    const id = createChatId()
     const session = createEmptySession(id, newChatTitle)
     const nextSessions = [session, ...sessions]
     persist(nextSessions, id)

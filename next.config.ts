@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  transpilePackages: ['ai', '@ai-sdk/react'],
   turbopack: {
     root: process.cwd(),
   },
