@@ -58,6 +58,10 @@
     "history": "History",
     "noHistory": "No conversations yet",
     "deleteChat": "Delete chat",
+    "confirmDeleteTitle": "Delete conversation",
+    "confirmDeleteDesc": "Delete \"{title}\"? This cannot be undone.",
+    "loadMoreHistory": "Load more",
+    "loadEarlierMessages": "Load earlier messages",
     "closeSidebar": "Close sidebar",
     "toggleSidebar": "Toggle sidebar",
     "loginRequired": "Sign in to use AI chat.",
@@ -311,6 +315,13 @@
     "galleryNotFound": "Work not found",
     "updateGalleryFailed": "Failed to update work",
     "deleteGalleryFailed": "Failed to delete work",
+    "fetchChatSessionsFailed": "Failed to load conversations",
+    "createChatSessionFailed": "Failed to create conversation",
+    "deleteChatSessionFailed": "Failed to delete conversation",
+    "fetchChatMessagesFailed": "Failed to load messages",
+    "saveChatMessagesFailed": "Failed to save messages",
+    "chatSessionNotFound": "Conversation not found",
+    "invalidChatSessionId": "Invalid conversation ID",
     "unknown": "Something went wrong. Please try again."
   }
 }

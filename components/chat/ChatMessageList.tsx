@@ -1,7 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import type { UIMessage } from '@/lib/chat/types'
+import { Button } from '@/components/ui/button'
 import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ChatEmptyState } from '@/components/chat/ChatEmptyState'
 import { ChatPendingReply } from '@/components/chat/ChatPendingReply'
@@ -11,6 +13,9 @@ interface ChatMessageListProps {
   status: 'submitted' | 'streaming' | 'ready' | 'error'
   onSuggestionSelect: (text: string) => void
   onRegenerate: () => void
+  hasEarlierMessages?: boolean
+  loadingEarlier?: boolean
+  onLoadEarlier?: () => void
 }
 
 const SCROLL_PIN_THRESHOLD = 96
@@ -20,7 +25,12 @@ export function ChatMessageList({
   status,
   onSuggestionSelect,
   onRegenerate,
+  hasEarlierMessages,
+  loadingEarlier,
+  onLoadEarlier,
 }: ChatMessageListProps) {
+  const t = useTranslations('chat')
+  const tCommon = useTranslations('common')
   const listRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const pinnedToBottomRef = useRef(true)
@@ -103,6 +113,20 @@ export function ChatMessageList({
       ref={listRef}
       className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain"
     >
+      {hasEarlierMessages && onLoadEarlier && (
+        <div className="flex justify-center px-4 py-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            disabled={loadingEarlier}
+            onClick={onLoadEarlier}
+          >
+            {loadingEarlier ? tCommon('loadingMore') : t('loadEarlierMessages')}
+          </Button>
+        </div>
+      )}
       {messages.map((message) => (
         <ChatMessage
           key={message.id}

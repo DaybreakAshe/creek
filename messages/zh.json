@@ -58,6 +58,10 @@
     "history": "历史记录",
     "noHistory": "暂无历史对话",
     "deleteChat": "删除对话",
+    "confirmDeleteTitle": "删除对话",
+    "confirmDeleteDesc": "确定删除「{title}」吗？此操作不可恢复。",
+    "loadMoreHistory": "加载更多历史",
+    "loadEarlierMessages": "加载更早的消息",
     "closeSidebar": "关闭侧栏",
     "toggleSidebar": "切换侧栏",
     "loginRequired": "登录后即可使用 AI 聊天功能。",
@@ -311,6 +315,13 @@
     "galleryNotFound": "作品不存在",
     "updateGalleryFailed": "更新作品失败",
     "deleteGalleryFailed": "删除作品失败",
+    "fetchChatSessionsFailed": "获取对话列表失败",
+    "createChatSessionFailed": "创建对话失败",
+    "deleteChatSessionFailed": "删除对话失败",
+    "fetchChatMessagesFailed": "获取消息失败",
+    "saveChatMessagesFailed": "保存消息失败",
+    "chatSessionNotFound": "对话不存在",
+    "invalidChatSessionId": "无效的对话 ID",
     "unknown": "操作失败，请稍后重试"
   }
 }

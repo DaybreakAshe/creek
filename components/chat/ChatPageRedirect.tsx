@@ -11,7 +11,7 @@ export function ChatPageRedirect() {
   const router = useRouter()
   const { data: session } = useSession()
   const userId = session?.user?.id
-  const { sessions, activeId, hydrated, createSession } = useChatSessions(
+  const { sessions, hydrated, createSession } = useChatSessions(
     userId,
     t('newChatTitle')
   )
@@ -23,18 +23,24 @@ export function ChatPageRedirect() {
       return
     }
 
-    if (sessions.length === 0) {
-      const id = createSession()
-      router.replace(`/chat/${id}`)
-      return
+    const run = async () => {
+      const empty = sessions.find((s) => s.messageCount === 0)
+      if (empty) {
+        router.replace(`/chat/${empty.id}`)
+        return
+      }
+
+      if (sessions.length === 0) {
+        const id = await createSession()
+        router.replace(`/chat/${id}`)
+        return
+      }
+
+      router.replace(`/chat/${sessions[0].id}`)
     }
 
-    const targetId =
-      activeId && sessions.some((s) => s.id === activeId)
-        ? activeId
-        : sessions[0].id
-    router.replace(`/chat/${targetId}`)
-  }, [hydrated, userId, sessions, activeId, createSession, router])
+    void run()
+  }, [hydrated, userId, sessions, createSession, router])
 
   return (
     <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">

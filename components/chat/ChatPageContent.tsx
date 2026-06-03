@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { History } from 'lucide-react'
@@ -35,16 +35,18 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
   const { data: session, status: authStatus } = useSession()
   const userId = session?.user?.id
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const syncingFromUrl = useRef(false)
+  const [sessionReady, setSessionReady] = useState(false)
 
   const {
     sessions,
-    activeId,
+    pagination,
     hydrated,
+    loadingMore,
+    loadMoreSessions,
     createSession,
-    selectSession,
     deleteSession,
     saveMessages,
+    ensureSession,
   } = useChatSessions(userId, t('newChatTitle'))
 
   const navigateToChat = useCallback(
@@ -74,87 +76,105 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
       return
     }
 
-    const exists = sessions.some((s) => s.id === chatId)
+    let cancelled = false
 
-    if (exists) {
-      if (activeId !== chatId) {
-        syncingFromUrl.current = true
-        selectSession(chatId)
+    const resolveSession = async () => {
+      const exists = sessions.some((s) => s.id === chatId)
+      if (exists) {
+        if (!cancelled) setSessionReady(true)
+        return
       }
-      return
+
+      const ok = await ensureSession(chatId)
+      if (cancelled) return
+
+      if (ok) {
+        setSessionReady(true)
+        return
+      }
+
+      if (sessions.length === 0) {
+        const id = await createSession()
+        router.replace(`/chat/${id}`)
+        return
+      }
+
+      router.replace(`/chat/${sessions[0].id}`)
     }
 
-    if (sessions.length === 0) {
-      const id = createSession()
-      router.replace(`/chat/${id}`)
-      return
-    }
+    setSessionReady(false)
+    void resolveSession()
 
-    const fallbackId =
-      activeId && sessions.some((s) => s.id === activeId)
-        ? activeId
-        : sessions[0].id
-    router.replace(`/chat/${fallbackId}`)
+    return () => {
+      cancelled = true
+    }
   }, [
     hydrated,
     userId,
     chatId,
     sessions,
-    activeId,
-    selectSession,
+    ensureSession,
     createSession,
     router,
   ])
 
-  useEffect(() => {
-    if (!hydrated || !userId || !activeId) return
-    if (syncingFromUrl.current) {
-      syncingFromUrl.current = false
-      return
-    }
-    if (chatId === activeId) return
-    navigateToChat(activeId, { replace: true })
-  }, [hydrated, userId, activeId, chatId, navigateToChat])
-
-  const handleNewChat = useCallback(() => {
-    const id = createSession()
+  const handleNewChat = useCallback(async () => {
+    const empty = sessions.find((s) => s.messageCount === 0)
+    const id = empty ? empty.id : await createSession()
     setSidebarOpen(false)
     navigateToChat(id, { replace: true })
-  }, [createSession, navigateToChat])
+  }, [sessions, createSession, navigateToChat])
 
   const handleSelectSession = useCallback(
     (id: string) => {
-      selectSession(id)
       setSidebarOpen(false)
       navigateToChat(id, { replace: true })
     },
-    [selectSession, navigateToChat]
+    [navigateToChat]
   )
 
   const handleDeleteSession = useCallback(
-    (id: string) => {
-      const wasActive = id === activeId
+    async (id: string) => {
+      const wasActive = id === chatId
       const remaining = sessions.filter((s) => s.id !== id)
-      deleteSession(id)
+      await deleteSession(id)
+
       if (!wasActive) return
 
-      const nextId = remaining[0]?.id
-      if (nextId) {
-        navigateToChat(nextId, { replace: true })
-      } else {
-        const newId = createSession()
-        navigateToChat(newId, { replace: true })
+      const empty = remaining.find((s) => s.messageCount === 0)
+      if (empty) {
+        navigateToChat(empty.id, { replace: true })
+        return
       }
+
+      if (remaining[0]) {
+        navigateToChat(remaining[0].id, { replace: true })
+        return
+      }
+
+      const newId = await createSession()
+      navigateToChat(newId, { replace: true })
     },
-    [deleteSession, activeId, sessions, navigateToChat, createSession]
+    [chatId, sessions, deleteSession, navigateToChat, createSession]
   )
 
   const handlePersist = useCallback(
     (persistChatId: string, messages: Parameters<typeof saveMessages>[1]) => {
-      saveMessages(persistChatId, messages)
+      void saveMessages(persistChatId, messages)
     },
     [saveMessages]
   )
+
+  const sidebarProps = {
+    sessions,
+    activeId: chatId,
+    onNewChat: () => void handleNewChat(),
+    onSelect: handleSelectSession,
+    onDelete: handleDeleteSession,
+    hasMore: pagination.hasMore,
+    loadingMore,
+    onLoadMore: () => void loadMoreSessions(),
+  }
 
   if (authStatus === 'loading' || (userId && !hydrated)) {
     return (
@@ -174,11 +194,7 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
     )
   }
 
-  const resolvedSession = sessions.find((s) => s.id === chatId)
-  const showConversation =
-    chatId && resolvedSession && activeId === chatId
-
-  if (!showConversation) {
+  if (!sessionReady) {
     return (
       <ChatPageShell>
         <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
@@ -190,14 +206,7 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
 
   return (
     <ChatPageShell>
-      <ChatSidebar
-        sessions={sessions}
-        activeId={activeId}
-        onNewChat={handleNewChat}
-        onSelect={handleSelectSession}
-        onDelete={handleDeleteSession}
-        className="hidden md:flex"
-      />
+      <ChatSidebar {...sidebarProps} className="hidden md:flex" />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="border-border flex shrink-0 items-center justify-end border-b px-3 py-2 md:hidden">
@@ -216,7 +225,6 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
         <ChatConversation
           key={chatId}
           chatId={chatId}
-          initialMessages={resolvedSession.messages}
           onMessagesPersist={handlePersist}
         />
       </div>
@@ -227,11 +235,7 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
             <DialogTitle>{t('history')}</DialogTitle>
           </DialogHeader>
           <ChatSidebar
-            sessions={sessions}
-            activeId={activeId}
-            onNewChat={handleNewChat}
-            onSelect={handleSelectSession}
-            onDelete={handleDeleteSession}
+            {...sidebarProps}
             onClose={() => setSidebarOpen(false)}
             className="flex flex-1 border-0"
           />

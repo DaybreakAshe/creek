@@ -31,6 +31,13 @@ export function getApiErrorMessage(
     'galleryNotFound',
     'updateGalleryFailed',
     'deleteGalleryFailed',
+    'fetchChatSessionsFailed',
+    'createChatSessionFailed',
+    'deleteChatSessionFailed',
+    'fetchChatMessagesFailed',
+    'saveChatMessagesFailed',
+    'chatSessionNotFound',
+    'invalidChatSessionId',
   ]
 
   if (knownCodes.includes(code)) {

@@ -1,100 +1,154 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import type { PaginationMeta } from '@/lib/pagination/types'
+import type { ChatSessionSummary } from '@/lib/chat/server'
+import type { UIMessage } from '@/lib/chat/types'
 import {
-  createEmptySession,
-  loadChatSessions,
-  saveChatSessions,
-  upsertSessionMessages,
-} from '@/lib/chat/storage'
-import { normalizeMessagesForStorage } from '@/lib/chat/message-utils'
-import type { ChatSession, UIMessage } from '@/lib/chat/types'
+  createChatSessionApi,
+  deleteChatSessionApi,
+  fetchChatSession,
+  fetchChatSessions,
+  saveChatMessagesApi,
+} from '@/lib/chat/api-client'
+import { CHAT_SESSION_PAGE_SIZE } from '@/lib/chat/constants'
 
 function createChatId() {
   return crypto.randomUUID()
 }
 
-export function useChatSessions(userId: string | undefined, newChatTitle: string) {
-  const [sessions, setSessions] = useState<ChatSession[]>([])
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [hydrated, setHydrated] = useState(false)
+const emptyPagination = (): PaginationMeta => ({
+  page: 1,
+  limit: CHAT_SESSION_PAGE_SIZE,
+  total: 0,
+  totalPages: 0,
+  hasMore: false,
+})
 
-  useEffect(() => {
+export function useChatSessions(userId: string | undefined, newChatTitle: string) {
+  const [sessions, setSessions] = useState<ChatSessionSummary[]>([])
+  const [pagination, setPagination] = useState<PaginationMeta>(emptyPagination)
+  const [hydrated, setHydrated] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const refreshSessions = useCallback(async () => {
     if (!userId) {
       setSessions([])
-      setActiveId(null)
+      setPagination(emptyPagination())
       setHydrated(true)
       return
     }
 
-    const stored = loadChatSessions(userId)
-    setSessions(stored.sessions)
-    setActiveId(stored.activeId)
+    const result = await fetchChatSessions(1, CHAT_SESSION_PAGE_SIZE)
+    setSessions(result.items)
+    setPagination(result.pagination)
     setHydrated(true)
   }, [userId])
 
-  const persist = useCallback(
-    (nextSessions: ChatSession[], nextActiveId: string | null) => {
-      setSessions(nextSessions)
-      setActiveId(nextActiveId)
-      if (userId) {
-        saveChatSessions(userId, {
-          sessions: nextSessions,
-          activeId: nextActiveId,
-        })
+  useEffect(() => {
+    setHydrated(false)
+    void refreshSessions().catch(() => {
+      setSessions([])
+      setPagination(emptyPagination())
+      setHydrated(true)
+    })
+  }, [refreshSessions])
+
+  const loadMoreSessions = useCallback(async () => {
+    if (!userId || !pagination.hasMore || loadingMore) return
+
+    setLoadingMore(true)
+    try {
+      const result = await fetchChatSessions(
+        pagination.page + 1,
+        CHAT_SESSION_PAGE_SIZE
+      )
+      setSessions((prev) => [...prev, ...result.items])
+      setPagination(result.pagination)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [userId, pagination, loadingMore])
+
+  const upsertSessionInList = useCallback((session: ChatSessionSummary) => {
+    setSessions((prev) => {
+      const index = prev.findIndex((s) => s.id === session.id)
+      if (index === -1) {
+        return [session, ...prev]
       }
-    },
-    [userId]
-  )
+      const next = [...prev]
+      next[index] = session
+      return next.sort((a, b) => b.updatedAt - a.updatedAt)
+    })
+  }, [])
 
-  const createSession = useCallback(() => {
+  const createSession = useCallback(async () => {
+    const empty = sessions.find((s) => s.messageCount === 0)
+    if (empty) {
+      return empty.id
+    }
+
     const id = createChatId()
-    const session = createEmptySession(id, newChatTitle)
-    const nextSessions = [session, ...sessions]
-    persist(nextSessions, id)
-    return id
-  }, [sessions, persist, newChatTitle])
-
-  const selectSession = useCallback(
-    (id: string) => {
-      persist(sessions, id)
-    },
-    [sessions, persist]
-  )
+    const session = await createChatSessionApi(id, newChatTitle)
+    upsertSessionInList(session)
+    setPagination((prev) => ({
+      ...prev,
+      total: prev.total + 1,
+    }))
+    return session.id
+  }, [sessions, newChatTitle, upsertSessionInList])
 
   const deleteSession = useCallback(
-    (id: string) => {
-      const nextSessions = sessions.filter((s) => s.id !== id)
-      const nextActiveId =
-        activeId === id ? (nextSessions[0]?.id ?? null) : activeId
-      persist(nextSessions, nextActiveId)
+    async (id: string) => {
+      await deleteChatSessionApi(id)
+      setSessions((prev) => prev.filter((s) => s.id !== id))
+      setPagination((prev) => ({
+        ...prev,
+        total: Math.max(0, prev.total - 1),
+      }))
     },
-    [sessions, activeId, persist]
+    []
   )
 
   const saveMessages = useCallback(
-    (sessionId: string, messages: UIMessage[]) => {
-      const nextSessions = upsertSessionMessages(
-        sessions,
+    async (sessionId: string, messages: UIMessage[]) => {
+      const session = await saveChatMessagesApi(
         sessionId,
-        normalizeMessagesForStorage(messages),
+        messages,
         newChatTitle
       )
-      persist(nextSessions, sessionId)
+      upsertSessionInList(session)
     },
-    [sessions, persist, newChatTitle]
+    [newChatTitle, upsertSessionInList]
   )
 
-  const activeSession = sessions.find((s) => s.id === activeId) ?? null
+  const ensureSession = useCallback(
+    async (sessionId: string) => {
+      if (sessions.some((s) => s.id === sessionId)) {
+        return true
+      }
+
+      try {
+        const session = await fetchChatSession(sessionId)
+        upsertSessionInList(session)
+        return true
+      } catch {
+        return false
+      }
+    },
+    [sessions, upsertSessionInList]
+  )
 
   return {
     sessions,
-    activeId,
-    activeSession,
+    pagination,
     hydrated,
+    loadingMore,
+    refreshSessions,
+    loadMoreSessions,
     createSession,
-    selectSession,
     deleteSession,
     saveMessages,
+    ensureSession,
   }
 }

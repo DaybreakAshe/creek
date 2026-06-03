@@ -28,6 +28,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const t = useTranslations('chat')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const isComposingRef = useRef(false)
   const isBusy = status === 'submitted' || status === 'streaming'
   const canSend = value.trim().length > 0 && !disabled && !isBusy
 
@@ -43,10 +44,11 @@ export function ChatInput({
   }, [resize, value])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      if (canSend) onSubmit()
-    }
+    if (e.key !== 'Enter' || e.shiftKey) return
+    if (e.nativeEvent.isComposing || isComposingRef.current) return
+
+    e.preventDefault()
+    if (canSend) onSubmit()
   }
 
   return (
@@ -67,6 +69,12 @@ export function ChatInput({
           onChange={(e) => {
             onChange(e.target.value)
             resize()
+          }}
+          onCompositionStart={() => {
+            isComposingRef.current = true
+          }}
+          onCompositionEnd={() => {
+            isComposingRef.current = false
           }}
           onKeyDown={handleKeyDown}
           style={{ minHeight: INPUT_MIN_HEIGHT }}

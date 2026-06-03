@@ -6,28 +6,36 @@ import { useTranslations } from 'next-intl'
 import { getChatTransport } from '@/lib/chat/client-transport'
 import { AlertCircle } from 'lucide-react'
 import type { UIMessage } from '@/lib/chat/types'
+import { useChatMessages } from '@/hooks/use-chat-messages'
 import { ChatMessageList } from '@/components/chat/ChatMessageList'
 import { ChatInput } from '@/components/chat/ChatInput'
 import { Button } from '@/components/ui/button'
 
 interface ChatConversationProps {
   chatId: string
-  initialMessages: UIMessage[]
   onMessagesPersist: (chatId: string, messages: UIMessage[]) => void
 }
 
 export function ChatConversation({
   chatId,
-  initialMessages,
   onMessagesPersist,
 }: ChatConversationProps) {
   const t = useTranslations('chat')
   const [input, setInput] = useState('')
 
+  const {
+    messages: loadedMessages,
+    loading: messagesLoading,
+    loadingEarlier,
+    hasEarlierMessages,
+    loadEarlierMessages,
+    error: messagesError,
+  } = useChatMessages(chatId)
+
   const { messages, sendMessage, status, stop, regenerate, error, clearError } =
     useChat({
       id: chatId,
-      messages: initialMessages,
+      messages: loadedMessages,
       transport: getChatTransport(),
     })
 
@@ -61,6 +69,22 @@ export function ChatConversation({
     return () => window.clearTimeout(timer)
   }, [chatId, messages, onMessagesPersist])
 
+  if (messagesLoading) {
+    return (
+      <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+        {t('loading')}
+      </div>
+    )
+  }
+
+  if (messagesError) {
+    return (
+      <div className="text-muted-foreground flex flex-1 items-center justify-center px-4 text-center text-sm">
+        {t('errorGeneric')}
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       {error && (
@@ -80,6 +104,9 @@ export function ChatConversation({
         status={status}
         onSuggestionSelect={handleSuggestion}
         onRegenerate={handleRegenerate}
+        hasEarlierMessages={hasEarlierMessages}
+        loadingEarlier={loadingEarlier}
+        onLoadEarlier={() => void loadEarlierMessages()}
       />
 
       <ChatInput

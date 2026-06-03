@@ -101,7 +101,11 @@ messages/             # zh.json / en.json
 
 | 端点 | 说明 |
 |------|------|
-| `POST /api/chat` | AI 聊天（需登录），`{ messages }`，UI Message Stream；系统提示词注入 [docs/creek-knowledge.md](./docs/creek-knowledge.md) |
+| `POST /api/chat` | AI 流式对话（需登录），`{ messages }` |
+| `GET /api/chat/sessions` | 会话列表（分页 `page`/`limit`） |
+| `POST /api/chat/sessions` | 新建会话 `{ sessionId?, title? }` |
+| `GET/DELETE /api/chat/sessions/[id]` | 会话详情 / 删除 |
+| `GET/PUT /api/chat/sessions/[id]/messages` | 消息列表（分页，`order=desc` 为最新优先）/ 全量保存 |
 
 ## 管理员
 
