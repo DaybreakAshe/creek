@@ -47,6 +47,10 @@ export function ChatConversation({
     [sendMessage, status]
   )
 
+  const handleRegenerate = useCallback(() => {
+    regenerate()
+  }, [regenerate])
+
   useEffect(() => {
     if (messages.length === 0) return
 
@@ -75,7 +79,7 @@ export function ChatConversation({
         messages={messages}
         status={status}
         onSuggestionSelect={handleSuggestion}
-        onRegenerate={() => regenerate()}
+        onRegenerate={handleRegenerate}
       />
 
       <ChatInput

@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/utils'
@@ -9,23 +10,28 @@ interface ChatMarkdownProps {
   className?: string
 }
 
-export function ChatMarkdown({ content, className }: ChatMarkdownProps) {
+export const ChatMarkdown = memo(function ChatMarkdown({
+  content,
+  className,
+}: ChatMarkdownProps) {
   return (
     <div
       className={cn(
-        'prose-chat text-sm leading-relaxed wrap-break-word select-text',
+        'prose-chat text-sm leading-relaxed break-words select-text',
         className
       )}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+          p: ({ children }) => (
+            <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>
+          ),
           ul: ({ children }) => (
-            <ul className="mb-3 list-disc space-y-1 pl-5 last:mb-0">{children}</ul>
+            <ul className="mb-2 list-disc space-y-1 pl-5 last:mb-0">{children}</ul>
           ),
           ol: ({ children }) => (
-            <ol className="mb-3 list-decimal space-y-1 pl-5 last:mb-0">
+            <ol className="mb-2 list-decimal space-y-1 pl-5 last:mb-0">
               {children}
             </ol>
           ),
@@ -53,7 +59,12 @@ export function ChatMarkdown({ content, className }: ChatMarkdownProps) {
             const isBlock = codeClassName?.includes('language-')
             if (isBlock) {
               return (
-                <code className={cn('font-mono text-xs', codeClassName)}>
+                <code
+                  className={cn(
+                    'block font-mono text-xs whitespace-pre select-text',
+                    codeClassName
+                  )}
+                >
                   {children}
                 </code>
               )
@@ -65,17 +76,17 @@ export function ChatMarkdown({ content, className }: ChatMarkdownProps) {
             )
           },
           pre: ({ children }) => (
-            <pre className="bg-muted mb-3 overflow-x-auto rounded-lg border p-3 text-xs last:mb-0">
+            <pre className="bg-muted mb-2 overflow-x-auto rounded-lg border p-3 text-xs last:mb-0 select-text">
               {children}
             </pre>
           ),
           blockquote: ({ children }) => (
-            <blockquote className="border-muted-foreground/30 text-muted-foreground mb-3 border-l-2 pl-3 italic last:mb-0">
+            <blockquote className="border-muted-foreground/30 text-muted-foreground mb-2 border-l-2 pl-3 italic last:mb-0">
               {children}
             </blockquote>
           ),
           table: ({ children }) => (
-            <div className="mb-3 overflow-x-auto last:mb-0">
+            <div className="mb-2 overflow-x-auto last:mb-0">
               <table className="w-full border-collapse text-xs">{children}</table>
             </div>
           ),
@@ -93,4 +104,4 @@ export function ChatMarkdown({ content, className }: ChatMarkdownProps) {
       </ReactMarkdown>
     </div>
   )
-}
+})

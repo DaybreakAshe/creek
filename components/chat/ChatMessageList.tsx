@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { UIMessage } from '@/lib/chat/types'
-import { getMessageText } from '@/lib/chat/message-utils'
 import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ChatEmptyState } from '@/components/chat/ChatEmptyState'
 import { ChatPendingReply } from '@/components/chat/ChatPendingReply'
@@ -25,13 +24,16 @@ export function ChatMessageList({
   const listRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const pinnedToBottomRef = useRef(true)
+  const blockAutoScrollRef = useRef(false)
   const isBusy = status === 'submitted' || status === 'streaming'
   const awaitingReply = status === 'submitted'
   const lastMessage = messages.at(-1)
   const lastAssistantId =
     [...messages].reverse().find((m) => m.role === 'assistant')?.id ?? null
-  const lastStreamTextLen =
-    lastMessage && isBusy ? getMessageText(lastMessage).length : 0
+
+  const handleRegenerate = useCallback(() => {
+    onRegenerate()
+  }, [onRegenerate])
 
   useEffect(() => {
     const el = listRef.current
@@ -43,33 +45,50 @@ export function ChatMessageList({
       pinnedToBottomRef.current = distanceFromBottom <= SCROLL_PIN_THRESHOLD
     }
 
+    const pauseAutoScroll = () => {
+      blockAutoScrollRef.current = true
+    }
+
+    const resumeAutoScroll = () => {
+      blockAutoScrollRef.current = false
+      updatePinned()
+    }
+
+    const onSelectionChange = () => {
+      const selection = document.getSelection()
+      if (
+        selection &&
+        !selection.isCollapsed &&
+        el.contains(selection.anchorNode)
+      ) {
+        blockAutoScrollRef.current = true
+      }
+    }
+
     updatePinned()
     el.addEventListener('scroll', updatePinned, { passive: true })
-    return () => el.removeEventListener('scroll', updatePinned)
+    el.addEventListener('pointerdown', pauseAutoScroll)
+    el.addEventListener('pointerup', resumeAutoScroll)
+    el.addEventListener('pointercancel', resumeAutoScroll)
+    document.addEventListener('selectionchange', onSelectionChange)
+
+    return () => {
+      el.removeEventListener('scroll', updatePinned)
+      el.removeEventListener('pointerdown', pauseAutoScroll)
+      el.removeEventListener('pointerup', resumeAutoScroll)
+      el.removeEventListener('pointercancel', resumeAutoScroll)
+      document.removeEventListener('selectionchange', onSelectionChange)
+    }
+  }, [])
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior) => {
+    if (blockAutoScrollRef.current || !pinnedToBottomRef.current) return
+    bottomRef.current?.scrollIntoView({ behavior, block: 'end' })
   }, [])
 
   useEffect(() => {
-    if (!pinnedToBottomRef.current) return
-    bottomRef.current?.scrollIntoView({
-      behavior: isBusy ? 'auto' : 'smooth',
-      block: 'end',
-    })
-  }, [messages.length, status, awaitingReply, isBusy])
-
-  useEffect(() => {
-    if (!isBusy || !pinnedToBottomRef.current) return
-
-    const selection = document.getSelection()
-    if (
-      selection &&
-      !selection.isCollapsed &&
-      listRef.current?.contains(selection.anchorNode)
-    ) {
-      return
-    }
-
-    bottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' })
-  }, [lastStreamTextLen, isBusy])
+    scrollToBottom(isBusy ? 'auto' : 'smooth')
+  }, [messages.length, status, awaitingReply, isBusy, scrollToBottom])
 
   if (messages.length === 0) {
     return (
@@ -98,7 +117,7 @@ export function ChatMessageList({
             message.role === 'assistant' &&
             message.id === lastAssistantId
           }
-          onRegenerate={onRegenerate}
+          onRegenerate={handleRegenerate}
         />
       ))}
       {awaitingReply && <ChatPendingReply />}
