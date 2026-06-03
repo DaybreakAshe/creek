@@ -69,6 +69,14 @@
     "emptyTitle": "Hi {name}! What would you like to talk about?",
     "emptyTitleGuest": "Hi! What would you like to talk about?",
     "emptyDescription": "Ask about Creek, tool recommendations, creative ideas, and more.",
+    "model": "Model",
+    "modelSelect": "Choose model",
+    "models": {
+      "flash25": "Gemini 2.5 Flash",
+      "pro25": "Gemini 2.5 Pro",
+      "flash20": "Gemini 2.0 Flash",
+      "pro15": "Gemini 1.5 Pro"
+    },
     "inputPlaceholder": "Type a message. Enter to send, Shift+Enter for newline",
     "send": "Send",
     "stop": "Stop generating",

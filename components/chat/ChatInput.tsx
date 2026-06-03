@@ -2,9 +2,18 @@
 
 import { useCallback, useLayoutEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { ArrowUp, Square } from 'lucide-react'
+import { ArrowUp, ChevronDown, Square } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import type { GeminiChatModelOption } from '@/lib/ai/gemini-models'
 
 const INPUT_MIN_HEIGHT = 56
 const INPUT_MAX_HEIGHT = 200
@@ -16,6 +25,10 @@ interface ChatInputProps {
   onStop?: () => void
   status: 'submitted' | 'streaming' | 'ready' | 'error'
   disabled?: boolean
+  models: GeminiChatModelOption[]
+  modelId: string
+  onModelChange: (modelId: string) => void
+  modelsReady?: boolean
 }
 
 export function ChatInput({
@@ -25,12 +38,18 @@ export function ChatInput({
   onStop,
   status,
   disabled,
+  models,
+  modelId,
+  onModelChange,
+  modelsReady = true,
 }: ChatInputProps) {
   const t = useTranslations('chat')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isComposingRef = useRef(false)
   const isBusy = status === 'submitted' || status === 'streaming'
   const canSend = value.trim().length > 0 && !disabled && !isBusy
+  const selectedModel = models.find((m) => m.id === modelId) ?? models[0]
+  const modelLabel = selectedModel?.name ?? t('model')
 
   const resize = useCallback(() => {
     const el = textareaRef.current
@@ -52,9 +71,9 @@ export function ChatInput({
   }
 
   return (
-    <div className="p-3 backdrop-blur sm:p-4">
+    <div className="border-border bg-background/80 border-t p-3 backdrop-blur sm:p-4">
       <form
-        className="bg-card border-input mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border p-2 shadow-sm"
+        className="bg-card border-input mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border p-2 shadow-sm"
         onSubmit={(e) => {
           e.preventDefault()
           if (canSend) onSubmit()
@@ -78,32 +97,61 @@ export function ChatInput({
           }}
           onKeyDown={handleKeyDown}
           className={cn(
-            'placeholder:text-muted-foreground max-h-[200px] flex-1 resize-none bg-transparent px-2 text-sm leading-6 outline-none transition-[height] duration-150 ease-out',
+            'placeholder:text-muted-foreground max-h-[200px] min-h-14 resize-none bg-transparent px-2 text-sm leading-6 outline-none transition-[height] duration-150 ease-out',
             'disabled:cursor-not-allowed disabled:opacity-50'
           )}
         />
-        {isBusy ? (
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            className="mb-0.5 size-9 shrink-0 rounded-xl"
-            onClick={onStop}
-            aria-label={t('stop')}
-          >
-            <Square className="size-4 fill-current" />
-          </Button>
-        ) : (
-          <Button
-            type="submit"
-            size="icon"
-            className="mb-0.5 size-9 shrink-0 rounded-xl"
-            disabled={!canSend}
-            aria-label={t('send')}
-          >
-            <ArrowUp className="size-4" />
-          </Button>
-        )}
+
+        <div className="flex items-center justify-between gap-2 px-0.5 pb-0.5">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground h-8 gap-1 px-2 text-xs font-normal"
+                disabled={!modelsReady || models.length === 0 || isBusy}
+                aria-label={t('modelSelect')}
+              >
+                <span className="max-w-[10rem] truncate">{modelLabel}</span>
+                <ChevronDown className="size-3.5 shrink-0 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[12rem]">
+              <DropdownMenuLabel>{t('modelSelect')}</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={modelId} onValueChange={onModelChange}>
+                {models.map((option) => (
+                  <DropdownMenuRadioItem key={option.id} value={option.id}>
+                    {option.name}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {isBusy ? (
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="size-9 shrink-0 rounded-xl"
+              onClick={onStop}
+              aria-label={t('stop')}
+            >
+              <Square className="size-4 fill-current" />
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              size="icon"
+              className="size-9 shrink-0 rounded-xl"
+              disabled={!canSend}
+              aria-label={t('send')}
+            >
+              <ArrowUp className="size-4" />
+            </Button>
+          )}
+        </div>
       </form>
     </div>
   )

@@ -15,6 +15,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useChatSessionsContext } from '@/components/chat/ChatSessionsProvider'
 import { ChatSidebar } from '@/components/chat/ChatSidebar'
 import { ChatConversation } from '@/components/chat/ChatConversation'
+import { useChatModel } from '@/hooks/use-chat-model'
 import { ChatLoginGate } from '@/components/chat/ChatLoginGate'
 import type { UIMessage } from '@/lib/chat/types'
 
@@ -57,6 +58,7 @@ export function ChatPageContent({ chatId: routeChatId }: ChatPageContentProps) {
     ensureSession,
   } = useChatSessionsContext()
 
+  const chatModel = useChatModel()
   const isDraft = !routeChatId
   const activeChatId = routeChatId ?? draftChatId
 
@@ -204,6 +206,7 @@ export function ChatPageContent({ chatId: routeChatId }: ChatPageContentProps) {
           chatId={activeChatId}
           loadHistoryFromServer={Boolean(routeChatId)}
           onMessagesPersist={handlePersist}
+          chatModel={chatModel}
         />
       </div>
 

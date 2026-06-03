@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { useTranslations } from 'next-intl'
-import { getChatTransport } from '@/lib/chat/client-transport'
+import { getChatTransport, setChatRequestExtraBody } from '@/lib/chat/client-transport'
+import type { useChatModel } from '@/hooks/use-chat-model'
 import { AlertCircle } from 'lucide-react'
 import type { UIMessage } from '@/lib/chat/types'
 import { useChatMessages } from '@/hooks/use-chat-messages'
@@ -13,11 +14,17 @@ import { Button } from '@/components/ui/button'
 
 const EMPTY_MESSAGES: UIMessage[] = []
 
+type ChatModelState = Pick<
+  ReturnType<typeof useChatModel>,
+  'models' | 'modelId' | 'selectModel' | 'ready'
+>
+
 interface ChatConversationProps {
   chatId: string
   /** 仅在为 true 时从服务端拉历史（侧栏点选或直链 /chat/{id}） */
   loadHistoryFromServer?: boolean
   onMessagesPersist: (chatId: string, messages: UIMessage[]) => void
+  chatModel: ChatModelState
 }
 
 interface ChatConversationInnerProps {
@@ -27,6 +34,7 @@ interface ChatConversationInnerProps {
   hasEarlierMessages: boolean
   loadingEarlier: boolean
   onLoadEarlier: () => void
+  chatModel: ChatModelState
 }
 
 function ChatConversationInner({
@@ -36,12 +44,14 @@ function ChatConversationInner({
   hasEarlierMessages,
   loadingEarlier,
   onLoadEarlier,
+  chatModel,
 }: ChatConversationInnerProps) {
   const t = useTranslations('chat')
   const [input, setInput] = useState('')
   const skipInitialPersistRef = useRef(true)
   const initialMessagesRef = useRef(initialMessages)
   initialMessagesRef.current = initialMessages
+  const { models, modelId, selectModel, ready: modelsReady } = chatModel
 
   const { messages, sendMessage, status, stop, regenerate, error, clearError } =
     useChat({
@@ -49,6 +59,10 @@ function ChatConversationInner({
       messages: initialMessages,
       transport: getChatTransport(),
     })
+
+  useEffect(() => {
+    setChatRequestExtraBody({ model: modelId })
+  }, [modelId])
 
   useEffect(() => {
     skipInitialPersistRef.current = true
@@ -129,6 +143,10 @@ function ChatConversationInner({
         onSubmit={() => void handleSubmit()}
         onStop={stop}
         status={status}
+        models={models}
+        modelId={modelId}
+        onModelChange={selectModel}
+        modelsReady={modelsReady}
       />
     </div>
   )
@@ -138,6 +156,7 @@ function ChatConversationInner({
 function ChatConversationLocal({
   chatId,
   onMessagesPersist,
+  chatModel,
 }: Omit<ChatConversationProps, 'loadHistoryFromServer'>) {
   return (
     <ChatConversationInner
@@ -147,6 +166,7 @@ function ChatConversationLocal({
       hasEarlierMessages={false}
       loadingEarlier={false}
       onLoadEarlier={() => {}}
+      chatModel={chatModel}
     />
   )
 }
@@ -154,6 +174,7 @@ function ChatConversationLocal({
 function ChatConversationWithHistory({
   chatId,
   onMessagesPersist,
+  chatModel,
 }: Omit<ChatConversationProps, 'loadHistoryFromServer'>) {
   const t = useTranslations('chat')
 
@@ -190,6 +211,7 @@ function ChatConversationWithHistory({
       hasEarlierMessages={hasEarlierMessages}
       loadingEarlier={loadingEarlier}
       onLoadEarlier={() => void loadEarlierMessages()}
+      chatModel={chatModel}
     />
   )
 }
@@ -198,14 +220,23 @@ export function ChatConversation({
   chatId,
   loadHistoryFromServer = false,
   onMessagesPersist,
+  chatModel,
 }: ChatConversationProps) {
   if (!loadHistoryFromServer) {
     return (
-      <ChatConversationLocal chatId={chatId} onMessagesPersist={onMessagesPersist} />
+      <ChatConversationLocal
+        chatId={chatId}
+        onMessagesPersist={onMessagesPersist}
+        chatModel={chatModel}
+      />
     )
   }
 
   return (
-    <ChatConversationWithHistory chatId={chatId} onMessagesPersist={onMessagesPersist} />
+    <ChatConversationWithHistory
+      chatId={chatId}
+      onMessagesPersist={onMessagesPersist}
+      chatModel={chatModel}
+    />
   )
 }
