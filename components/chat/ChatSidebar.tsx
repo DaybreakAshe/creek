@@ -19,6 +19,8 @@ import type { ChatSessionSummary } from '@/lib/chat/server'
 interface ChatSidebarProps {
   sessions: ChatSessionSummary[]
   activeId: string | null
+  /** 会话列表首次加载中（仅影响侧栏，不挡主聊天区） */
+  sessionsLoading?: boolean
   onNewChat: () => void
   onSelect: (id: string) => void
   onDelete: (id: string) => void
@@ -50,6 +52,7 @@ function formatRelativeTime(timestamp: number, locale: string) {
 export function ChatSidebar({
   sessions,
   activeId,
+  sessionsLoading = false,
   onNewChat,
   onSelect,
   onDelete,
@@ -117,7 +120,11 @@ export function ChatSidebar({
           <p className="text-muted-foreground px-2 py-1.5 text-xs font-medium">
             {t('history')}
           </p>
-          {sessions.length === 0 ? (
+          {sessionsLoading ? (
+            <p className="text-muted-foreground px-2 py-6 text-center text-xs">
+              {tCommon('loading')}
+            </p>
+          ) : sessions.length === 0 ? (
             <p className="text-muted-foreground px-2 py-6 text-center text-xs">
               {t('noHistory')}
             </p>

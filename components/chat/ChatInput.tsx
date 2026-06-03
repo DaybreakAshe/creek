@@ -52,7 +52,7 @@ export function ChatInput({
   }
 
   return (
-    <div className="border-border bg-background/80 shrink-0 border-t p-3 backdrop-blur sm:p-4">
+    <div className="p-3 backdrop-blur sm:p-4">
       <form
         className="bg-card border-input mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border p-2 shadow-sm"
         onSubmit={(e) => {
@@ -105,9 +105,6 @@ export function ChatInput({
           </Button>
         )}
       </form>
-      <p className="text-muted-foreground mx-auto mt-2 max-w-3xl text-center text-xs">
-        {t('disclaimer')}
-      </p>
     </div>
   )
 }

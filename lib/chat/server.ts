@@ -57,7 +57,7 @@ export async function listChatSessions(
   userId: string,
   pagination: PaginationParams
 ) {
-  const filter = { userId }
+  const filter = { userId, messageCount: { $gt: 0 } }
   const [total, docs] = await Promise.all([
     ChatSession.countDocuments(filter),
     ChatSession.find(filter)

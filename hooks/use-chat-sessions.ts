@@ -105,32 +105,27 @@ export function useChatSessions(userId: string | undefined, newChatTitle: string
   }, [userId, pagination, loadingMore])
 
   const upsertSessionInList = useCallback((session: ChatSessionSummary) => {
+    if (session.messageCount === 0) return
+
     setSessions((prev) => {
       const index = prev.findIndex((s) => s.id === session.id)
       if (index === -1) {
         return [session, ...prev]
       }
       const next = [...prev]
-      next[index] = session
-      return next.sort((a, b) => b.updatedAt - a.updatedAt)
+      next[index] = { ...next[index], ...session }
+      return next
     })
   }, [])
 
-  const createSession = useCallback(async () => {
-    const empty = sessions.find((s) => s.messageCount === 0)
-    if (empty) {
-      return empty.id
-    }
-
-    const id = createChatId()
-    const session = await createChatSessionApi(id, newChatTitle)
-    upsertSessionInList(session)
-    setPagination((prev) => ({
-      ...prev,
-      total: prev.total + 1,
-    }))
-    return session.id
-  }, [sessions, newChatTitle, upsertSessionInList])
+  const createSession = useCallback(
+    async (sessionId?: string) => {
+      const id = sessionId ?? createChatId()
+      const session = await createChatSessionApi(id, newChatTitle)
+      return session.id
+    },
+    [newChatTitle]
+  )
 
   const deleteSession = useCallback(
     async (id: string) => {

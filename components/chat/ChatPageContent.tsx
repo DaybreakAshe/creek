@@ -16,6 +16,7 @@ import { useChatSessionsContext } from '@/components/chat/ChatSessionsProvider'
 import { ChatSidebar } from '@/components/chat/ChatSidebar'
 import { ChatConversation } from '@/components/chat/ChatConversation'
 import { ChatLoginGate } from '@/components/chat/ChatLoginGate'
+import type { UIMessage } from '@/lib/chat/types'
 
 function ChatPageShell({ children }: { children: React.ReactNode }) {
   return (
@@ -25,17 +26,24 @@ function ChatPageShell({ children }: { children: React.ReactNode }) {
   )
 }
 
-interface ChatPageContentProps {
-  chatId: string
+function createDraftChatId() {
+  return crypto.randomUUID()
 }
 
-export function ChatPageContent({ chatId }: ChatPageContentProps) {
+interface ChatPageContentProps {
+  /** 路由中的会话 id；省略表示新对话草稿（地址栏为 /chat） */
+  chatId?: string
+}
+
+export function ChatPageContent({ chatId: routeChatId }: ChatPageContentProps) {
   const t = useTranslations('chat')
   const router = useRouter()
   const { data: session, status: authStatus } = useSession()
   const userId = session?.user?.id
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const resolvingRef = useRef(false)
+  const [promotedDraftId, setPromotedDraftId] = useState<string | null>(null)
+  const invalidRouteRef = useRef(false)
+  const draftIdRef = useRef(createDraftChatId())
 
   const {
     sessions,
@@ -49,8 +57,19 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
     ensureSession,
   } = useChatSessionsContext()
 
-  const sessionsRef = useRef(sessions)
-  sessionsRef.current = sessions
+  const isDraft = !routeChatId
+  const activeChatId = routeChatId ?? draftIdRef.current
+  /** 新对话草稿或刚从草稿提升：无历史可拉，避免用临时 id 请求 404 */
+  const skipHistoryFetch =
+    isDraft || (!!routeChatId && promotedDraftId === routeChatId)
+
+  useEffect(() => {
+    if (!routeChatId) {
+      draftIdRef.current = createDraftChatId()
+      setPromotedDraftId(null)
+      invalidRouteRef.current = false
+    }
+  }, [routeChatId])
 
   const navigateToChat = useCallback(
     (id: string, options?: { replace?: boolean }) => {
@@ -64,109 +83,86 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
     [router]
   )
 
+  /** 后台校验直链会话；失败则静默跳回新对话，不挡主区域 */
   useEffect(() => {
-    if (!hydrated || !userId) return
-
-    if (chatId === 'new') {
-      router.replace('/chat')
-      return
-    }
-
-    if (sessionsRef.current.some((s) => s.id === chatId)) {
-      return
-    }
-
-    if (resolvingRef.current) return
-    resolvingRef.current = true
+    if (!hydrated || !userId || !routeChatId || routeChatId === 'new') return
+    if (routeChatId === promotedDraftId) return
+    if (sessions.some((s) => s.id === routeChatId)) return
+    if (invalidRouteRef.current) return
 
     let cancelled = false
 
     void (async () => {
-      const ok = await ensureSession(chatId)
+      const ok = await ensureSession(routeChatId)
       if (cancelled) return
-
-      if (ok) return
-
-      if (sessionsRef.current.length === 0) {
-        const id = await createSession()
-        router.replace(`/chat/${id}`)
-        return
+      if (!ok) {
+        invalidRouteRef.current = true
+        router.replace('/chat')
       }
-
-      router.replace(`/chat/${sessionsRef.current[0].id}`)
-    })().finally(() => {
-      if (!cancelled) resolvingRef.current = false
-    })
+    })()
 
     return () => {
       cancelled = true
-      resolvingRef.current = false
     }
-  }, [hydrated, userId, chatId, ensureSession, createSession, router])
+  }, [hydrated, userId, routeChatId, promotedDraftId, sessions, ensureSession, router])
 
-  const handleNewChat = useCallback(async () => {
-    const empty = sessions.find((s) => s.messageCount === 0)
-    if (empty) {
-      if (empty.id !== chatId) {
-        navigateToChat(empty.id, { replace: true })
-      }
-      setSidebarOpen(false)
-      return
-    }
-
-    const id = await createSession()
+  const handleNewChat = useCallback(() => {
     setSidebarOpen(false)
-    navigateToChat(id, { replace: true })
-  }, [sessions, chatId, createSession, navigateToChat])
+    setPromotedDraftId(null)
+    if (isDraft) return
+    router.replace('/chat')
+  }, [isDraft, router])
 
   const handleSelectSession = useCallback(
     (id: string) => {
-      if (id !== chatId) {
+      setPromotedDraftId(null)
+      if (id !== routeChatId) {
         navigateToChat(id, { replace: true })
       }
       setSidebarOpen(false)
     },
-    [chatId, navigateToChat]
+    [routeChatId, navigateToChat]
   )
 
   const handleDeleteSession = useCallback(
     async (id: string) => {
-      const wasActive = id === chatId
+      const wasActive = id === routeChatId
       const remaining = sessions.filter((s) => s.id !== id)
       await deleteSession(id)
 
       if (!wasActive) return
 
-      const empty = remaining.find((s) => s.messageCount === 0)
-      if (empty) {
-        navigateToChat(empty.id, { replace: true })
-        return
-      }
+      setPromotedDraftId(null)
 
       if (remaining[0]) {
         navigateToChat(remaining[0].id, { replace: true })
         return
       }
 
-      const newId = await createSession()
-      navigateToChat(newId, { replace: true })
+      router.replace('/chat')
     },
-    [chatId, sessions, deleteSession, navigateToChat, createSession]
+    [routeChatId, sessions, deleteSession, navigateToChat, router]
   )
 
   const handlePersist = useCallback(
-    (persistChatId: string, messages: Parameters<typeof saveMessages>[1]) => {
-      void saveMessages(persistChatId, messages)
-    },
-    [saveMessages]
-  )
+    async (persistChatId: string, messages: UIMessage[]) => {
+      if (messages.length === 0) return
 
-  const sessionKnown =
-    hydrated && sessions.some((s) => s.id === chatId)
+      if (isDraft) {
+        setPromotedDraftId(persistChatId)
+        navigateToChat(persistChatId, { replace: true })
+        await createSession(persistChatId)
+      }
+
+      await saveMessages(persistChatId, messages)
+    },
+    [isDraft, createSession, navigateToChat, saveMessages]
+  )
 
   const sidebarProps = {
     sessions,
-    activeId: chatId,
+    activeId: routeChatId ?? null,
+    sessionsLoading: Boolean(userId && !hydrated),
     onNewChat: () => void handleNewChat(),
     onSelect: handleSelectSession,
     onDelete: handleDeleteSession,
@@ -175,7 +171,7 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
     onLoadMore: () => void loadMoreSessions(),
   }
 
-  if (authStatus === 'loading' || (userId && !hydrated)) {
+  if (authStatus === 'loading') {
     return (
       <ChatPageShell>
         <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
@@ -189,16 +185,6 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
     return (
       <ChatPageShell>
         <ChatLoginGate />
-      </ChatPageShell>
-    )
-  }
-
-  if (!sessionKnown) {
-    return (
-      <ChatPageShell>
-        <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
-          {t('loading')}
-        </div>
       </ChatPageShell>
     )
   }
@@ -221,7 +207,11 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
           </Button>
         </div>
 
-        <ChatConversation chatId={chatId} onMessagesPersist={handlePersist} />
+        <ChatConversation
+          chatId={activeChatId}
+          skipHistoryFetch={skipHistoryFetch}
+          onMessagesPersist={(id, messages) => void handlePersist(id, messages)}
+        />
       </div>
 
       <Dialog open={sidebarOpen} onOpenChange={setSidebarOpen}>

@@ -13,13 +13,14 @@ import { Button } from '@/components/ui/button'
 
 interface ChatConversationProps {
   chatId: string
+  /** 草稿对话尚未写入服务端，跳过拉取历史以免覆盖流式状态 */
+  skipHistoryFetch?: boolean
   onMessagesPersist: (chatId: string, messages: UIMessage[]) => void
 }
 
 interface ChatConversationInnerProps {
   chatId: string
   initialMessages: UIMessage[]
-  historyReady: boolean
   onMessagesPersist: (chatId: string, messages: UIMessage[]) => void
   hasEarlierMessages: boolean
   loadingEarlier: boolean
@@ -29,7 +30,6 @@ interface ChatConversationInnerProps {
 function ChatConversationInner({
   chatId,
   initialMessages,
-  historyReady,
   onMessagesPersist,
   hasEarlierMessages,
   loadingEarlier,
@@ -39,7 +39,7 @@ function ChatConversationInner({
   const [input, setInput] = useState('')
   const skipInitialPersistRef = useRef(true)
 
-  const { messages, setMessages, sendMessage, status, stop, regenerate, error, clearError } =
+  const { messages, sendMessage, status, stop, regenerate, error, clearError } =
     useChat({
       id: chatId,
       messages: initialMessages,
@@ -49,12 +49,6 @@ function ChatConversationInner({
   useEffect(() => {
     skipInitialPersistRef.current = true
   }, [chatId])
-
-  useEffect(() => {
-    if (!historyReady) return
-    setMessages(initialMessages)
-    skipInitialPersistRef.current = true
-  }, [chatId, historyReady, initialMessages, setMessages])
 
   const handleSubmit = useCallback(async () => {
     const text = input.trim()
@@ -137,6 +131,7 @@ function ChatConversationInner({
 
 export function ChatConversation({
   chatId,
+  skipHistoryFetch = false,
   onMessagesPersist,
 }: ChatConversationProps) {
   const t = useTranslations('chat')
@@ -148,7 +143,7 @@ export function ChatConversation({
     hasEarlierMessages,
     loadEarlierMessages,
     error: messagesError,
-  } = useChatMessages(chatId)
+  } = useChatMessages(skipHistoryFetch ? null : chatId)
 
   if (messagesError) {
     return (
@@ -158,22 +153,22 @@ export function ChatConversation({
     )
   }
 
+  if (messagesLoading) {
+    return (
+      <div className="text-muted-foreground flex min-h-0 flex-1 items-center justify-center text-sm">
+        {t('loading')}
+      </div>
+    )
+  }
+
   return (
-    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-      {messagesLoading && (
-        <div className="bg-background/70 text-muted-foreground pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-sm">
-          {t('loading')}
-        </div>
-      )}
-      <ChatConversationInner
-        chatId={chatId}
-        initialMessages={loadedMessages}
-        historyReady={!messagesLoading}
-        onMessagesPersist={onMessagesPersist}
-        hasEarlierMessages={hasEarlierMessages}
-        loadingEarlier={loadingEarlier}
-        onLoadEarlier={() => void loadEarlierMessages()}
-      />
-    </div>
+    <ChatConversationInner
+      chatId={chatId}
+      initialMessages={loadedMessages}
+      onMessagesPersist={onMessagesPersist}
+      hasEarlierMessages={hasEarlierMessages}
+      loadingEarlier={loadingEarlier}
+      onLoadEarlier={() => void loadEarlierMessages()}
+    />
   )
 }

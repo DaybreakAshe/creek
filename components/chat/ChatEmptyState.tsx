@@ -1,5 +1,6 @@
 'use client'
 
+import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,8 @@ interface ChatEmptyStateProps {
 
 export function ChatEmptyState({ onSelect }: ChatEmptyStateProps) {
   const t = useTranslations('chat')
+  const { data: session } = useSession()
+  const userName = session?.user?.name?.trim().split(/\s+/)[0]
 
   const suggestions = [
     t('suggestions.intro'),
@@ -24,7 +27,9 @@ export function ChatEmptyState({ onSelect }: ChatEmptyStateProps) {
         <Sparkles className="size-7" />
       </div>
       <div className="max-w-md space-y-2">
-        <h2 className="text-xl font-semibold tracking-tight">{t('emptyTitle')}</h2>
+        <h1 className="text-xl font-semibold tracking-tight">
+          {userName ? t('emptyTitle', { name: userName }) : t('emptyTitleGuest')}
+        </h1>
         <p className="text-muted-foreground text-sm">{t('emptyDescription')}</p>
       </div>
       <div className="grid w-full max-w-lg gap-2 sm:grid-cols-2">

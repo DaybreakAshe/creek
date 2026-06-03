@@ -4,8 +4,8 @@ import { ChatPageContent } from '@/components/chat/ChatPageContent'
 /** 供 build 阶段生成静态外壳；真实 id 在运行时由客户端路由处理。 */
 const BUILD_PLACEHOLDER_ID = '__placeholder__'
 
-type ChatIdPageProps = {
-  params: Promise<{ locale: string; id: string }>
+type ChatPageProps = {
+  params: Promise<{ locale: string; id?: string[] }>
 }
 
 function ChatLoadingFallback() {
@@ -17,23 +17,28 @@ function ChatLoadingFallback() {
 }
 
 export function generateStaticParams() {
-  return [{ id: BUILD_PLACEHOLDER_ID }]
+  return [{ id: undefined }, { id: [BUILD_PLACEHOLDER_ID] }]
 }
 
-export default function ChatIdPage({ params }: ChatIdPageProps) {
+export default function ChatPage({ params }: ChatPageProps) {
   return (
     <Suspense fallback={<ChatLoadingFallback />}>
-      <ChatIdPageInner params={params} />
+      <ChatPageRoute params={params} />
     </Suspense>
   )
 }
 
-async function ChatIdPageInner({ params }: ChatIdPageProps) {
-  const { id } = await params
+async function ChatPageRoute({ params }: ChatPageProps) {
+  const { id: segments } = await params
+  const segment = segments?.[0]
 
-  if (id === BUILD_PLACEHOLDER_ID) {
+  if (segment === BUILD_PLACEHOLDER_ID) {
     return <ChatLoadingFallback />
   }
 
-  return <ChatPageContent chatId={id} />
+  if (segment === 'new' || !segment) {
+    return <ChatPageContent />
+  }
+
+  return <ChatPageContent chatId={segment} />
 }
