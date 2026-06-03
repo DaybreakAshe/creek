@@ -34,10 +34,22 @@ function toUIMessage(doc: {
   role: 'user' | 'assistant' | 'system'
   parts: unknown[]
 }): UIMessage {
+  const rawParts = Array.isArray(doc.parts) ? doc.parts : []
+  const parts = rawParts.filter(
+    (part): part is UIMessage['parts'][number] =>
+      typeof part === 'object' &&
+      part !== null &&
+      'type' in part &&
+      typeof (part as { type?: unknown }).type === 'string'
+  )
+
   return {
     id: doc.messageId,
     role: doc.role,
-    parts: doc.parts as UIMessage['parts'],
+    parts:
+      parts.length > 0
+        ? parts
+        : [{ type: 'text' as const, text: '' }],
   }
 }
 

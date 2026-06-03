@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { useTranslations } from 'next-intl'
 import { getChatTransport } from '@/lib/chat/client-transport'
@@ -16,26 +16,31 @@ interface ChatConversationProps {
   onMessagesPersist: (chatId: string, messages: UIMessage[]) => void
 }
 
-export function ChatConversation({
+interface ChatConversationInnerProps {
+  chatId: string
+  initialMessages: UIMessage[]
+  onMessagesPersist: (chatId: string, messages: UIMessage[]) => void
+  hasEarlierMessages: boolean
+  loadingEarlier: boolean
+  onLoadEarlier: () => void
+}
+
+/** 等历史消息加载完成后再挂载 useChat，避免用空数组初始化后无法显示已拉取的消息。 */
+function ChatConversationInner({
   chatId,
+  initialMessages,
   onMessagesPersist,
-}: ChatConversationProps) {
+  hasEarlierMessages,
+  loadingEarlier,
+  onLoadEarlier,
+}: ChatConversationInnerProps) {
   const t = useTranslations('chat')
   const [input, setInput] = useState('')
-
-  const {
-    messages: loadedMessages,
-    loading: messagesLoading,
-    loadingEarlier,
-    hasEarlierMessages,
-    loadEarlierMessages,
-    error: messagesError,
-  } = useChatMessages(chatId)
 
   const { messages, sendMessage, status, stop, regenerate, error, clearError } =
     useChat({
       id: chatId,
-      messages: loadedMessages,
+      messages: initialMessages,
       transport: getChatTransport(),
     })
 
@@ -59,31 +64,31 @@ export function ChatConversation({
     regenerate()
   }, [regenerate])
 
+  const skipInitialPersistRef = useRef(true)
+
   useEffect(() => {
     if (messages.length === 0) return
+
+    if (skipInitialPersistRef.current) {
+      skipInitialPersistRef.current = false
+      if (
+        messages.length === initialMessages.length &&
+        messages.every(
+          (m, i) =>
+            m.id === initialMessages[i]?.id &&
+            JSON.stringify(m.parts) === JSON.stringify(initialMessages[i]?.parts)
+        )
+      ) {
+        return
+      }
+    }
 
     const timer = window.setTimeout(() => {
       onMessagesPersist(chatId, messages)
     }, 400)
 
     return () => window.clearTimeout(timer)
-  }, [chatId, messages, onMessagesPersist])
-
-  if (messagesLoading) {
-    return (
-      <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
-        {t('loading')}
-      </div>
-    )
-  }
-
-  if (messagesError) {
-    return (
-      <div className="text-muted-foreground flex flex-1 items-center justify-center px-4 text-center text-sm">
-        {t('errorGeneric')}
-      </div>
-    )
-  }
+  }, [chatId, initialMessages, messages, onMessagesPersist])
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -106,7 +111,7 @@ export function ChatConversation({
         onRegenerate={handleRegenerate}
         hasEarlierMessages={hasEarlierMessages}
         loadingEarlier={loadingEarlier}
-        onLoadEarlier={() => void loadEarlierMessages()}
+        onLoadEarlier={onLoadEarlier}
       />
 
       <ChatInput
@@ -117,5 +122,49 @@ export function ChatConversation({
         status={status}
       />
     </div>
+  )
+}
+
+export function ChatConversation({
+  chatId,
+  onMessagesPersist,
+}: ChatConversationProps) {
+  const t = useTranslations('chat')
+
+  const {
+    messages: loadedMessages,
+    loading: messagesLoading,
+    loadingEarlier,
+    hasEarlierMessages,
+    loadEarlierMessages,
+    error: messagesError,
+  } = useChatMessages(chatId)
+
+  if (messagesLoading) {
+    return (
+      <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+        {t('loading')}
+      </div>
+    )
+  }
+
+  if (messagesError) {
+    return (
+      <div className="text-muted-foreground flex flex-1 items-center justify-center px-4 text-center text-sm">
+        {t('errorGeneric')}
+      </div>
+    )
+  }
+
+  return (
+    <ChatConversationInner
+      key={chatId}
+      chatId={chatId}
+      initialMessages={loadedMessages}
+      onMessagesPersist={onMessagesPersist}
+      hasEarlierMessages={hasEarlierMessages}
+      loadingEarlier={loadingEarlier}
+      onLoadEarlier={() => void loadEarlierMessages()}
+    />
   )
 }

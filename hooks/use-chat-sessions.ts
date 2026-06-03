@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PaginationMeta } from '@/lib/pagination/types'
 import type { ChatSessionSummary } from '@/lib/chat/server'
 import type { UIMessage } from '@/lib/chat/types'
@@ -45,14 +45,48 @@ export function useChatSessions(userId: string | undefined, newChatTitle: string
     setHydrated(true)
   }, [userId])
 
+  const sessionsInflightRef = useRef<{
+    userId: string
+    promise: Promise<void>
+  } | null>(null)
+
   useEffect(() => {
-    setHydrated(false)
-    void refreshSessions().catch(() => {
+    let cancelled = false
+
+    if (!userId) {
+      sessionsInflightRef.current = null
       setSessions([])
       setPagination(emptyPagination())
       setHydrated(true)
-    })
-  }, [refreshSessions])
+      return
+    }
+
+    const existing = sessionsInflightRef.current
+    if (existing?.userId === userId) {
+      void existing.promise
+      return
+    }
+
+    setHydrated(false)
+    const promise = refreshSessions()
+      .catch(() => {
+        if (cancelled) return
+        setSessions([])
+        setPagination(emptyPagination())
+        setHydrated(true)
+      })
+      .finally(() => {
+        if (sessionsInflightRef.current?.promise === promise) {
+          sessionsInflightRef.current = null
+        }
+      })
+
+    sessionsInflightRef.current = { userId, promise }
+
+    return () => {
+      cancelled = true
+    }
+  }, [userId, refreshSessions])
 
   const loadMoreSessions = useCallback(async () => {
     if (!userId || !pagination.hasMore || loadingMore) return

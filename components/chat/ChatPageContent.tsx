@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { History } from 'lucide-react'
@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useRouter } from '@/i18n/navigation'
-import { useChatSessions } from '@/hooks/use-chat-sessions'
+import { useChatSessionsContext } from '@/components/chat/ChatSessionsProvider'
 import { ChatSidebar } from '@/components/chat/ChatSidebar'
 import { ChatConversation } from '@/components/chat/ChatConversation'
 import { ChatLoginGate } from '@/components/chat/ChatLoginGate'
@@ -35,7 +35,7 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
   const { data: session, status: authStatus } = useSession()
   const userId = session?.user?.id
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sessionReady, setSessionReady] = useState(false)
+  const resolvingRef = useRef(false)
 
   const {
     sessions,
@@ -47,7 +47,10 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
     deleteSession,
     saveMessages,
     ensureSession,
-  } = useChatSessions(userId, t('newChatTitle'))
+  } = useChatSessionsContext()
+
+  const sessionsRef = useRef(sessions)
+  sessionsRef.current = sessions
 
   const navigateToChat = useCallback(
     (id: string, options?: { replace?: boolean }) => {
@@ -62,75 +65,68 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
   )
 
   useEffect(() => {
-    if (!hydrated) return
-
-    if (!userId) {
-      if (chatId !== 'new') {
-        router.replace('/chat/new')
-      }
-      return
-    }
+    if (!hydrated || !userId) return
 
     if (chatId === 'new') {
       router.replace('/chat')
       return
     }
 
+    if (sessionsRef.current.some((s) => s.id === chatId)) {
+      return
+    }
+
+    if (resolvingRef.current) return
+    resolvingRef.current = true
+
     let cancelled = false
 
-    const resolveSession = async () => {
-      const exists = sessions.some((s) => s.id === chatId)
-      if (exists) {
-        if (!cancelled) setSessionReady(true)
-        return
-      }
-
+    void (async () => {
       const ok = await ensureSession(chatId)
       if (cancelled) return
 
-      if (ok) {
-        setSessionReady(true)
-        return
-      }
+      if (ok) return
 
-      if (sessions.length === 0) {
+      if (sessionsRef.current.length === 0) {
         const id = await createSession()
         router.replace(`/chat/${id}`)
         return
       }
 
-      router.replace(`/chat/${sessions[0].id}`)
-    }
-
-    setSessionReady(false)
-    void resolveSession()
+      router.replace(`/chat/${sessionsRef.current[0].id}`)
+    })().finally(() => {
+      if (!cancelled) resolvingRef.current = false
+    })
 
     return () => {
       cancelled = true
+      resolvingRef.current = false
     }
-  }, [
-    hydrated,
-    userId,
-    chatId,
-    sessions,
-    ensureSession,
-    createSession,
-    router,
-  ])
+  }, [hydrated, userId, chatId, ensureSession, createSession, router])
 
   const handleNewChat = useCallback(async () => {
     const empty = sessions.find((s) => s.messageCount === 0)
-    const id = empty ? empty.id : await createSession()
+    if (empty) {
+      if (empty.id !== chatId) {
+        navigateToChat(empty.id, { replace: true })
+      }
+      setSidebarOpen(false)
+      return
+    }
+
+    const id = await createSession()
     setSidebarOpen(false)
     navigateToChat(id, { replace: true })
-  }, [sessions, createSession, navigateToChat])
+  }, [sessions, chatId, createSession, navigateToChat])
 
   const handleSelectSession = useCallback(
     (id: string) => {
+      if (id !== chatId) {
+        navigateToChat(id, { replace: true })
+      }
       setSidebarOpen(false)
-      navigateToChat(id, { replace: true })
     },
-    [navigateToChat]
+    [chatId, navigateToChat]
   )
 
   const handleDeleteSession = useCallback(
@@ -165,6 +161,9 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
     [saveMessages]
   )
 
+  const sessionKnown =
+    hydrated && sessions.some((s) => s.id === chatId)
+
   const sidebarProps = {
     sessions,
     activeId: chatId,
@@ -194,7 +193,7 @@ export function ChatPageContent({ chatId }: ChatPageContentProps) {
     )
   }
 
-  if (!sessionReady) {
+  if (!sessionKnown) {
     return (
       <ChatPageShell>
         <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">

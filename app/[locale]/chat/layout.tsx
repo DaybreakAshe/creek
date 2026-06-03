@@ -1,4 +1,5 @@
 import { MainContent } from '@/components/layout/MainContent'
+import { ChatSessionsProvider } from '@/components/chat/ChatSessionsProvider'
 
 export default function ChatLayout({
   children,
@@ -7,7 +8,7 @@ export default function ChatLayout({
 }>) {
   return (
     <MainContent variant="full" className="h-full min-h-0">
-      {children}
+      <ChatSessionsProvider>{children}</ChatSessionsProvider>
     </MainContent>
   )
 }

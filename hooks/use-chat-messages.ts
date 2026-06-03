@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PaginationMeta } from '@/lib/pagination/types'
 import type { UIMessage } from '@/lib/chat/types'
 import { fetchChatMessages } from '@/lib/chat/api-client'
@@ -37,15 +37,30 @@ export function useChatMessages(sessionId: string | null) {
     }
   }, [])
 
+  const requestIdRef = useRef(0)
+  const inflightRef = useRef<Map<string, Promise<void>>>(new Map())
+
   useEffect(() => {
     if (!sessionId) {
       setMessages([])
       setPagination(emptyPagination())
       setError(null)
+      setLoading(false)
       return
     }
 
-    void loadInitial(sessionId)
+    const requestId = ++requestIdRef.current
+    let inflight = inflightRef.current.get(sessionId)
+    if (!inflight) {
+      inflight = loadInitial(sessionId).finally(() => {
+        inflightRef.current.delete(sessionId)
+      })
+      inflightRef.current.set(sessionId, inflight)
+    }
+
+    void inflight.then(() => {
+      if (requestId !== requestIdRef.current) return
+    })
   }, [sessionId, loadInitial])
 
   const loadEarlierMessages = useCallback(async () => {
