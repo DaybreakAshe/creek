@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { useTheme } from 'next-themes'
@@ -9,15 +10,18 @@ import { Button } from '@/components/ui/button'
 
 interface ChatEmptyStateProps {
   onSelect: (text: string) => void
+  className?: string
 }
 
-export function ChatEmptyState({ onSelect }: ChatEmptyStateProps) {
+export function ChatEmptyState({ onSelect, className }: ChatEmptyStateProps) {
   const t = useTranslations('chat')
   const { data: session } = useSession()
   const { resolvedTheme } = useTheme()
   const userName = session?.user?.name?.trim().split(/\s+/)[0]
-  const threadColor: [number, number, number] =
-    resolvedTheme === 'dark' ? [0.75, 0.75, 0.8] : [0.35, 0.35, 0.4]
+  const threadColor = useMemo<[number, number, number]>(
+    () => (resolvedTheme === 'dark' ? [1, 1, 1] : [0.35, 0.35, 0.4]),
+    [resolvedTheme]
+  )
 
   const suggestions = [
     t('suggestions.intro'),
@@ -27,15 +31,16 @@ export function ChatEmptyState({ onSelect }: ChatEmptyStateProps) {
   ]
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className={`relative flex min-h-0 flex-1 flex-col ${className ?? ''}`.trim()}>
       <Threads
-        className="pointer-events-none absolute inset-0"
+        aria-hidden
+        className="absolute inset-0"
         color={threadColor}
-        amplitude={1.2}
-        distance={0.15}
+        amplitude={1}
+        distance={0.2}
       />
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-6 px-6 py-12 text-center">
-        <div className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl backdrop-blur-sm">
+        <div className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl">
           <Sparkles className="size-7" />
         </div>
         <div className="max-w-md space-y-2">
@@ -50,7 +55,7 @@ export function ChatEmptyState({ onSelect }: ChatEmptyStateProps) {
               key={text}
               type="button"
               variant="outline"
-              className="bg-background/60 h-auto min-h-10 justify-start px-3 py-2.5 text-left text-sm font-normal whitespace-normal backdrop-blur-sm"
+              className="bg-background/55 border-border/60 h-auto min-h-10 justify-start px-3 py-2.5 text-left text-sm font-normal whitespace-normal backdrop-blur-md"
               onClick={() => onSelect(text)}
             >
               {text}

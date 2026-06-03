@@ -128,6 +128,7 @@ function ChatConversationInner({
       )}
 
       <ChatMessageList
+        className="min-h-0 flex-1"
         messages={messages}
         status={status}
         onSuggestionSelect={handleSuggestion}

@@ -9,6 +9,7 @@ import { ChatEmptyState } from '@/components/chat/ChatEmptyState'
 import { ChatPendingReply } from '@/components/chat/ChatPendingReply'
 
 interface ChatMessageListProps {
+  className?: string
   messages: UIMessage[]
   status: 'submitted' | 'streaming' | 'ready' | 'error'
   onSuggestionSelect: (text: string) => void
@@ -21,6 +22,7 @@ interface ChatMessageListProps {
 const SCROLL_PIN_THRESHOLD = 96
 
 export function ChatMessageList({
+  className,
   messages,
   status,
   onSuggestionSelect,
@@ -101,17 +103,13 @@ export function ChatMessageList({
   }, [messages.length, status, awaitingReply, isBusy, scrollToBottom])
 
   if (messages.length === 0) {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <ChatEmptyState onSelect={onSuggestionSelect} />
-      </div>
-    )
+    return <ChatEmptyState onSelect={onSuggestionSelect} className={className} />
   }
 
   return (
     <div
       ref={listRef}
-      className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain"
+      className={`flex min-h-0 flex-col overflow-y-auto overscroll-contain ${className ?? 'flex-1'}`.trim()}
     >
       {hasEarlierMessages && onLoadEarlier && (
         <div className="flex justify-center px-4 py-2">
