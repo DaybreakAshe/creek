@@ -38,6 +38,7 @@ export function ChatMessage({
   const reasoning = getMessageReasoning(message)
   const showThinking = !isUser && isStreaming && text.length === 0
   const showUnsupported = hasUnsupportedParts(message)
+  const showActions = !isUser && text.length > 0
 
   const handleCopy = async () => {
     if (!text) return
@@ -49,7 +50,7 @@ export function ChatMessage({
   return (
     <div
       className={cn(
-        'group flex gap-3 px-4 py-5',
+        'flex gap-3 px-4 py-5',
         isUser ? 'bg-transparent' : 'bg-muted/30'
       )}
     >
@@ -73,31 +74,34 @@ export function ChatMessage({
         </p>
 
         {reasoning && !isStreaming && (
-          <details className="text-muted-foreground group/reasoning text-xs">
-            <summary className="cursor-pointer list-none marker:content-none [&::-webkit-details-marker]:hidden">
+          <details className="text-muted-foreground text-xs">
+            <summary className="cursor-pointer list-none marker:content-none select-none [&::-webkit-details-marker]:hidden">
               <span className="hover:text-foreground underline-offset-2 hover:underline">
                 {t('reasoning')}
               </span>
             </summary>
-            <p className="mt-2 leading-relaxed whitespace-pre-wrap">{reasoning}</p>
+            <p className="mt-2 leading-relaxed whitespace-pre-wrap select-text">
+              {reasoning}
+            </p>
           </details>
         )}
 
-        <div className="text-foreground">
+        <div className="text-foreground select-text">
           {showThinking ? (
             <ChatThinkingLabel />
           ) : isUser ? (
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
           ) : text ? (
-            <ChatMarkdown content={text} />
+            isStreaming ? (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
+            ) : (
+              <ChatMarkdown content={text} />
+            )
           ) : null}
-          {!isUser && isStreaming && text.length > 0 && (
-            <span className="bg-foreground ml-0.5 inline-block h-4 w-0.5 animate-pulse align-middle" />
-          )}
         </div>
 
-        {!isUser && text && !isStreaming && (
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {showActions && (
+          <div className="flex items-center gap-1 pt-0.5">
             <Button
               type="button"
               variant="ghost"
@@ -112,7 +116,7 @@ export function ChatMessage({
               )}
               {copied ? t('copied') : t('copy')}
             </Button>
-            {canRegenerate && onRegenerate && (
+            {canRegenerate && onRegenerate && !isStreaming && (
               <Button
                 type="button"
                 variant="ghost"

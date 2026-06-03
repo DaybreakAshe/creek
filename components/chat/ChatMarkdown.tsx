@@ -13,7 +13,7 @@ export function ChatMarkdown({ content, className }: ChatMarkdownProps) {
   return (
     <div
       className={cn(
-        'prose-chat text-sm leading-relaxed wrap-break-word',
+        'prose-chat text-sm leading-relaxed wrap-break-word select-text',
         className
       )}
     >
