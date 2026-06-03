@@ -71,7 +71,7 @@ export function ChatInput({
   }
 
   return (
-    <div className="border-border bg-background/80 border-t p-3 backdrop-blur sm:p-4">
+    <div className="p-3 backdrop-blur sm:p-4">
       <form
         className="bg-card border-input mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border p-2 shadow-sm"
         onSubmit={(e) => {
