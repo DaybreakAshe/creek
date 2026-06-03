@@ -1,8 +1,8 @@
 # Creek
 
-源于自然，为你精选 —— 一个基于 Next.js 的全栈 Web 应用，支持 Google 登录、工具收藏与管理、多语言切换。
+源于自然，为你精选 —— 一个基于 Next.js 的全栈 Web 应用，支持 Google 登录、作品展示、工具收藏与管理、AI 聊天与多语言切换。
 
-网站链接：[(https://www.icreek.xyz)](https://www.icreek.xyz)
+网站：[https://www.icreek.xyz](https://www.icreek.xyz)
 
 ## 技术栈
 
@@ -15,15 +15,18 @@
 | 数据库 | [MongoDB](https://www.mongodb.com/) + Mongoose |
 | 国际化 | [next-intl](https://next-intl.dev/)（中文 / 英文） |
 | 数据请求 | SWR |
+| 媒体 CDN | Sirv |
 | AI | [Vercel AI SDK](https://ai-sdk.dev/) + [@ai-sdk/google](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai)（Gemini） |
 | 主题 | next-themes（亮色 / 暗色 / 跟随系统） |
 
 ## 环境要求
 
-- **Node.js** 18.18 或更高版本
+- **Node.js** 18.18+
 - **pnpm**（推荐）或 npm / yarn
-- **MongoDB** 本地实例或远程连接
-- **Google Cloud** OAuth 凭据（用于登录）
+- **MongoDB**
+- **Google Cloud** OAuth 凭据
+- **Google AI Studio** API Key（AI 聊天，可选）
+- **Sirv**（作品上传，可选）
 
 ## 快速开始
 
@@ -35,43 +38,27 @@ pnpm install
 
 ### 2. 配置环境变量
 
-复制示例文件并填入真实值：
-
 ```bash
 cp .env.example .env.local
 ```
 
-`.env.local` 中需要配置：
-
 | 变量 | 说明 |
 |------|------|
-| `NEXTAUTH_URL` | 站点地址，本地为 `http://localhost:3000` |
-| `NEXTAUTH_SECRET` | NextAuth 密钥，可用 `openssl rand -base64 32` 生成 |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
+| `NEXTAUTH_URL` | 站点地址，本地 `http://localhost:3000` |
+| `NEXTAUTH_SECRET` | NextAuth 密钥，`openssl rand -base64 32` |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
 | `MONGODB_URI` | MongoDB 连接字符串 |
-| `ADMIN_USER_ID` | 管理员 User ID（登录后可访问 `/admin`） |
-| `SIRV_CLIENT_ID` | Sirv API Client ID |
-| `SIRV_CLIENT_SECRET` | Sirv API Client Secret |
-| `SIRV_CDN_URL` | Sirv CDN 域名（如 `your-account.sirv.com`） |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) 的 Gemini API Key（AI 聊天） |
-| `GEMINI_MODEL` | 可选，Gemini 模型 ID，默认 `gemini-2.5-flash` |
+| `ADMIN_USER_ID` | 管理员 User ID（`/profile` 查看） |
+| `SIRV_CLIENT_ID` / `SIRV_CLIENT_SECRET` / `SIRV_CDN_URL` | Sirv CDN |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Gemini API Key |
+| `GEMINI_MODEL` | 可选，默认 `gemini-2.5-flash` |
 
-Google OAuth 与 NextAuth 的详细配置步骤见 [README_AUTH.md](./README_AUTH.md)。
+Google OAuth 详见 [README_AUTH.md](./README_AUTH.md)。
 
-AI 聊天后端：`POST /api/chat`（需登录），请求体为 `{ messages: UIMessage[] }`，响应为 UI Message Stream，供后续 `useChat` 使用。
-
-### 3. 启动开发服务器
+### 3. 开发 / 构建
 
 ```bash
-pnpm dev
-```
-
-浏览器访问 [http://localhost:3000](http://localhost:3000)。
-
-### 4. 生产构建
-
-```bash
+pnpm dev      # http://localhost:3000
 pnpm build
 pnpm start
 ```
@@ -80,46 +67,49 @@ pnpm start
 
 | 命令 | 说明 |
 |------|------|
-| `pnpm dev` | 启动开发服务器（Turbopack） |
-| `pnpm build` | 构建生产版本 |
-| `pnpm start` | 运行生产服务器 |
+| `pnpm dev` | 开发服务器（Turbopack） |
+| `pnpm build` | 生产构建 |
+| `pnpm start` | 生产运行 |
+| `pnpm db:seed-tools` | 种子工具数据 |
 
 ## 主要功能
 
-- **首页 / 关于** — 站点展示页
-- **工具集合** — 浏览公开工具、管理个人工具（需登录）
-- **用户登录** — Google OAuth 一键登录（`/login`）
-- **个人主页** — 查看账户信息（`/profile`）
-- **管理后台** — 工具与用户管理（`/admin`，仅 `ADMIN_USER_ID` 对应账号可访问）
-- **多语言** — 默认中文，支持英文（`/en/...`）
+- **首页** — 公开作品瀑布流，登录后可上传
+- **工具** — `/tools` 浏览公开工具，`/tools/mine` 管理个人工具
+- **AI 聊天** — `/chat`，Gemini 流式对话（需登录）
+- **登录** — Google OAuth（`/login`）
+- **个人主页** — `/profile`
+- **管理后台** — `/admin`（`ADMIN_USER_ID`）
 
 ## 项目结构
 
 ```
 app/
-├── [locale]/          # 页面路由（含 i18n）
-│   ├── admin/         # 管理后台
-│   ├── tools/         # 工具相关页面
-│   ├── login/         # 登录页
-│   └── ...
-├── api/               # API 路由
-└── layout.tsx         # 根布局
-
-i18n/                  # 国际化配置
-messages/              # 中英文文案（zh.json / en.json）
-lib/                   # 工具函数、数据库、鉴权等
-components/            # UI 组件
-middleware.ts          # 国际化 + 鉴权中间件
+├── [locale]/
+│   ├── (main)/       # 首页、工具、作品、登录、管理后台
+│   └── chat/         # AI 聊天（全屏）
+├── api/chat/         # 聊天 API（含 RAG）
+components/           # UI 组件
+lib/                  # 业务逻辑、AI、数据库
+docs/
+└── creek-knowledge.md  # AI 助手产品知识库（RAG）
+i18n/                 # 国际化
+messages/             # zh.json / en.json
 ```
 
-## 管理员说明
+## API
 
-1. 使用 Google 账号登录后，在 `/profile` 页面查看自己的 **User ID**
-2. 将该 ID 写入 `.env.local` 的 `ADMIN_USER_ID`
-3. 重启开发服务器，即可访问 `/admin`
+| 端点 | 说明 |
+|------|------|
+| `POST /api/chat` | AI 聊天（需登录），`{ messages }`，UI Message Stream；系统提示词注入 [docs/creek-knowledge.md](./docs/creek-knowledge.md) |
 
-未登录访问 `/admin` 会跳转登录页；非管理员账号会被重定向到首页。
+## 管理员
+
+1. 登录后在 `/profile` 查看 **User ID**
+2. 写入 `.env.local` 的 `ADMIN_USER_ID`
+3. 重启后访问 `/admin`
 
 ## 相关文档
 
-- [README_AUTH.md](./README_AUTH.md) — Google OAuth 与 NextAuth 配置指南
+- [README_AUTH.md](./README_AUTH.md) — Google OAuth 与 NextAuth
+- [docs/creek-knowledge.md](./docs/creek-knowledge.md) — AI 聊天产品知识库（RAG）

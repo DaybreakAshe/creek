@@ -5,14 +5,11 @@ import {
 } from 'ai'
 import { getGeminiModelId, isGeminiConfigured } from '@/lib/ai/config'
 import { getGoogleProvider } from '@/lib/ai/google'
+import { buildChatSystemPrompt } from '@/lib/chat/rag-context'
 import { apiError } from '@/lib/api-response'
 import { requireAuth } from '@/lib/require-auth'
 
 export const maxDuration = 60
-
-const CHAT_SYSTEM_PROMPT = `你是 Creek 网站的 AI 助手，友好、简洁、准确。
-请用用户使用的语言回复（中文或英文）。
-若问题与网站无关，可礼貌说明并尝试提供有用信息。`
 
 export async function POST(req: Request) {
   const auth = await requireAuth()
@@ -38,7 +35,7 @@ export async function POST(req: Request) {
     const google = getGoogleProvider()
     const result = streamText({
       model: google(getGeminiModelId()),
-      system: CHAT_SYSTEM_PROMPT,
+      system: buildChatSystemPrompt(),
       messages: await convertToModelMessages(messages),
     })
 
