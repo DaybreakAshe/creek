@@ -60,7 +60,7 @@ export function ChatConversation({
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       {error && (
-        <div className="border-destructive/30 bg-destructive/10 text-destructive mx-4 mt-3 flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm">
+        <div className="border-destructive/30 bg-destructive/10 text-destructive mx-4 mt-3 flex shrink-0 items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm">
           <span className="flex items-center gap-2">
             <AlertCircle className="size-4 shrink-0" />
             {t('errorGeneric')}

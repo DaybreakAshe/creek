@@ -51,7 +51,7 @@ export function ChatSidebar({
   return (
     <aside
       className={cn(
-        'border-border bg-sidebar flex w-full shrink-0 flex-col border-r md:w-72',
+        'border-border bg-sidebar flex h-full w-full shrink-0 flex-col border-r md:w-72',
         className
       )}
     >

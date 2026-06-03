@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import type { UIMessage } from '@/lib/chat/types'
 import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ChatEmptyState } from '@/components/chat/ChatEmptyState'
+import { ChatPendingReply } from '@/components/chat/ChatPendingReply'
 
 interface ChatMessageListProps {
   messages: UIMessage[]
@@ -20,20 +21,25 @@ export function ChatMessageList({
 }: ChatMessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const isBusy = status === 'submitted' || status === 'streaming'
+  const awaitingReply = status === 'submitted'
   const lastMessage = messages.at(-1)
   const lastAssistantId =
     [...messages].reverse().find((m) => m.role === 'assistant')?.id ?? null
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, status])
+  }, [messages, status, awaitingReply])
 
   if (messages.length === 0) {
-    return <ChatEmptyState onSelect={onSuggestionSelect} />
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <ChatEmptyState onSelect={onSuggestionSelect} />
+      </div>
+    )
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
       {messages.map((message) => (
         <ChatMessage
           key={message.id}
@@ -51,6 +57,7 @@ export function ChatMessageList({
           onRegenerate={onRegenerate}
         />
       ))}
+      {awaitingReply && <ChatPendingReply />}
       <div ref={bottomRef} className="h-px shrink-0" aria-hidden />
     </div>
   )

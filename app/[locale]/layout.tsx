@@ -64,8 +64,8 @@ export default async function LocaleLayout({
                 disableTransitionOnChange
               >
                 <Header />
-                <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                  <div className="container mx-auto px-3 py-4">{children}</div>
+                <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+                  {children}
                 </main>
               </ThemeProvider>
             </SWRConfig>

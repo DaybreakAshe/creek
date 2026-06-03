@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import type { UIMessage } from '@/lib/chat/types'
 import { useTranslations } from 'next-intl'
-import { Bot, Check, Copy, RotateCcw, User } from 'lucide-react'
+import { Bot, Check, Copy, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ChatMarkdown } from '@/components/chat/ChatMarkdown'
+import { ChatTypingIndicator } from '@/components/chat/ChatTypingIndicator'
 import { getMessageText } from '@/lib/chat/message-utils'
+import { useCurrentUser } from '@/hooks/use-current-user'
 
 interface ChatMessageProps {
   message: UIMessage
@@ -24,6 +26,7 @@ export function ChatMessage({
   canRegenerate,
 }: ChatMessageProps) {
   const t = useTranslations('chat')
+  const currentUser = useCurrentUser()
   const [copied, setCopied] = useState(false)
   const isUser = message.role === 'user'
   const text = getMessageText(message)
@@ -45,14 +48,21 @@ export function ChatMessage({
       )}
     >
       <Avatar className="size-8 shrink-0">
-        <AvatarFallback
-          className={cn(
-            'text-xs',
-            isUser ? 'bg-primary text-primary-foreground' : 'bg-secondary'
-          )}
-        >
-          {isUser ? <User className="size-4" /> : <Bot className="size-4" />}
-        </AvatarFallback>
+        {isUser ? (
+          <>
+            <AvatarImage
+              src={currentUser?.avatar || undefined}
+              alt={currentUser?.name || t('you')}
+            />
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+              {currentUser?.name?.[0]?.toUpperCase() || 'U'}
+            </AvatarFallback>
+          </>
+        ) : (
+          <AvatarFallback className="bg-secondary text-xs">
+            <Bot className="size-4" />
+          </AvatarFallback>
+        )}
       </Avatar>
 
       <div className="min-w-0 flex-1 space-y-2">
@@ -62,11 +72,7 @@ export function ChatMessage({
 
         <div className="text-foreground">
           {showTypingCursor ? (
-            <span className="inline-flex items-center gap-1">
-              <span className="bg-foreground/70 size-2 animate-pulse rounded-full" />
-              <span className="bg-foreground/50 size-2 animate-pulse rounded-full [animation-delay:150ms]" />
-              <span className="bg-foreground/30 size-2 animate-pulse rounded-full [animation-delay:300ms]" />
-            </span>
+            <ChatTypingIndicator />
           ) : isUser ? (
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
           ) : (

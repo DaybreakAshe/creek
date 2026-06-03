@@ -16,6 +16,14 @@ import { ChatSidebar } from '@/components/chat/ChatSidebar'
 import { ChatConversation } from '@/components/chat/ChatConversation'
 import { ChatLoginGate } from '@/components/chat/ChatLoginGate'
 
+function ChatPageShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-background flex h-full min-h-0 w-full overflow-hidden">
+      {children}
+    </div>
+  )
+}
+
 export function ChatPageContent() {
   const t = useTranslations('chat')
   const { data: session, status: authStatus } = useSession()
@@ -75,58 +83,56 @@ export function ChatPageContent() {
 
   if (authStatus === 'loading' || (userId && !hydrated)) {
     return (
-      <div className="text-muted-foreground flex h-[calc(100dvh-4rem)] items-center justify-center text-sm">
-        {t('loading')}
-      </div>
+      <ChatPageShell>
+        <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+          {t('loading')}
+        </div>
+      </ChatPageShell>
     )
   }
 
   if (!userId) {
     return (
-      <div className="border-border -mx-3 -mt-4 flex h-[calc(100dvh-4rem)] flex-col overflow-hidden rounded-xl border md:-mx-3">
+      <ChatPageShell>
         <ChatLoginGate />
-      </div>
+      </ChatPageShell>
     )
   }
 
   if (!activeId) {
     return (
-      <div className="text-muted-foreground flex h-[calc(100dvh-4rem)] items-center justify-center text-sm">
-        {t('loading')}
-      </div>
+      <ChatPageShell>
+        <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+          {t('loading')}
+        </div>
+      </ChatPageShell>
     )
   }
 
   return (
-    <div className="border-border -mx-3 -mt-4 flex h-[calc(100dvh-4rem)] flex-col overflow-hidden rounded-xl border md:-mx-3">
-      <div className="border-border flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2 sm:px-4">
-        <div className="min-w-0">
-          <h1 className="truncate text-base font-semibold sm:text-lg">{t('title')}</h1>
-          <p className="text-muted-foreground hidden truncate text-xs sm:block">
-            {t('subtitle')}
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-1.5 md:hidden"
-          onClick={() => setSidebarOpen(true)}
-        >
-          <History className="size-4" />
-          {t('history')}
-        </Button>
-      </div>
+    <ChatPageShell>
+      <ChatSidebar
+        sessions={sessions}
+        activeId={activeId}
+        onNewChat={handleNewChat}
+        onSelect={handleSelectSession}
+        onDelete={handleDeleteSession}
+        className="hidden md:flex"
+      />
 
-      <div className="flex min-h-0 flex-1">
-        <ChatSidebar
-          sessions={sessions}
-          activeId={activeId}
-          onNewChat={handleNewChat}
-          onSelect={handleSelectSession}
-          onDelete={handleDeleteSession}
-          className="hidden md:flex"
-        />
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="border-border flex shrink-0 items-center justify-end border-b px-3 py-2 md:hidden">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <History className="size-4" />
+            {t('history')}
+          </Button>
+        </div>
 
         <ChatConversation
           key={activeId}
@@ -152,6 +158,6 @@ export function ChatPageContent() {
           />
         </DialogContent>
       </Dialog>
-    </div>
+    </ChatPageShell>
   )
 }
