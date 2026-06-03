@@ -77,9 +77,8 @@ export function ChatInput({
             isComposingRef.current = false
           }}
           onKeyDown={handleKeyDown}
-          style={{ minHeight: INPUT_MIN_HEIGHT }}
           className={cn(
-            'placeholder:text-muted-foreground max-h-[200px] min-h-14 flex-1 resize-none bg-transparent px-2 py-3 text-sm leading-6 outline-none transition-[height] duration-150 ease-out',
+            'placeholder:text-muted-foreground max-h-[200px] flex-1 resize-none bg-transparent px-2 text-sm leading-6 outline-none transition-[height] duration-150 ease-out',
             'disabled:cursor-not-allowed disabled:opacity-50'
           )}
         />
