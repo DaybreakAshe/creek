@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { AdminBackLink } from '@/components/admin/AdminBackLink'
 import { ToolDialog } from '@/components/tools/ToolDialog'
 import { PaginationControls } from '@/components/ui/pagination-controls'
@@ -16,15 +16,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { ToolIcon } from '@/components/tools/ToolIcon'
+import { ListSearchInput } from '@/components/ui/list-search-input'
+import {
+  useDebouncedSearch,
+  useListSearchFetchUi,
+} from '@/hooks/use-list-search-ui'
 import { usePaginatedPage } from '@/hooks/use-paginated-page'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { ToolLink } from '@/models/tool'
 import { formatDateTime } from '@/lib/format-date'
 import type { Locale } from '@/i18n/routing'
-
-const SEARCH_DEBOUNCE_MS = 300
 
 export default function AdminToolsPage() {
   const t = useTranslations('admin')
@@ -33,21 +35,20 @@ export default function AdminToolsPage() {
   const tProfile = useTranslations('profile')
   const tErrors = useTranslations('errors')
   const locale = useLocale() as Locale
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTool, setEditingTool] = useState<ToolLink | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
+  const {
+    searchQuery,
+    setSearchQuery,
+    debouncedSearch,
+    isComposing,
+    handleCompositionStart,
+    handleCompositionEnd,
+  } = useDebouncedSearch()
 
   const {
     items: tools,
@@ -60,6 +61,13 @@ export default function AdminToolsPage() {
   } = usePaginatedPage<ToolLink>({
     basePath: '/api/admin/tools',
     search: debouncedSearch,
+  })
+
+  const { isInitialLoad, showSearchSpinner } = useListSearchFetchUi({
+    loading,
+    searchQuery,
+    debouncedSearch,
+    isComposing,
   })
 
   const listError = error
@@ -130,7 +138,7 @@ export default function AdminToolsPage() {
   const totalCount = pagination?.total ?? 0
   const totalPages = pagination?.totalPages ?? 0
 
-  if (loading && tools.length === 0) {
+  if (isInitialLoad) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <p className="text-muted-foreground">{tCommon('loading')}</p>
@@ -155,15 +163,14 @@ export default function AdminToolsPage() {
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-        <Input
-          placeholder={t('searchTools')}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <ListSearchInput
+        placeholder={t('searchTools')}
+        value={searchQuery}
+        onChange={setSearchQuery}
+        onCompositionStart={handleCompositionStart}
+        onCompositionEnd={handleCompositionEnd}
+        showSpinner={showSearchSpinner}
+      />
 
       {listError && (
         <p className="text-destructive text-sm" role="alert">

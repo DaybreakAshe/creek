@@ -4,12 +4,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useSession } from 'next-auth/react'
-import { Loader2, Plus, Search, UserRound } from 'lucide-react'
+import { Plus, UserRound } from 'lucide-react'
 import { canManageTool } from '@/lib/tool-auth'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { loginRedirectPath } from '@/lib/locale-path'
 import type { Locale } from '@/i18n/routing'
+import {
+  useDebouncedSearch,
+  useListSearchFetchUi,
+} from '@/hooks/use-list-search-ui'
 import { usePaginatedList } from '@/hooks/use-paginated-list'
+import { ListSearchInput } from '@/components/ui/list-search-input'
 import { ToolCard } from '@/components/tools/ToolCard'
 import { ToolDialog } from '@/components/tools/ToolDialog'
 import { PaginatedInfiniteGrid } from '@/components/ui/paginated-infinite-grid'
@@ -24,7 +29,6 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ToolLink } from '@/models/tool'
-import { cn } from '@/lib/utils'
 
 type ToolsScope = 'public' | 'mine'
 
@@ -32,37 +36,23 @@ interface ToolsPageContentProps {
   scope: ToolsScope
 }
 
-const SEARCH_DEBOUNCE_MS = 300
-
 export function ToolsPageContent({ scope }: ToolsPageContentProps) {
   const t = useTranslations('tools')
   const tCommon = useTranslations('common')
   const tErrors = useTranslations('errors')
   const locale = useLocale() as Locale
   const { data: session, status } = useSession()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTool, setEditingTool] = useState<ToolLink | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [initialLoadDone, setInitialLoadDone] = useState(false)
-
   const userId = session?.user?.id
   const isMine = scope === 'mine'
   const listEnabled =
     scope === 'public' ||
     (status === 'authenticated' && Boolean(userId))
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
 
   useEffect(() => {
     if (scope !== 'mine') return
@@ -72,9 +62,14 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
     }
   }, [scope, status, locale])
 
-  useEffect(() => {
-    setInitialLoadDone(false)
-  }, [scope, userId])
+  const {
+    searchQuery,
+    setSearchQuery,
+    debouncedSearch,
+    isComposing,
+    handleCompositionStart,
+    handleCompositionEnd,
+  } = useDebouncedSearch()
 
   const listQuery = useMemo(
     () =>
@@ -98,20 +93,19 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
     resetDeps: [scope, userId],
   })
 
-  useEffect(() => {
-    if (listEnabled && !loading) {
-      setInitialLoadDone(true)
-    }
-  }, [listEnabled, loading])
+  const { isInitialLoad, showSearchSpinner } = useListSearchFetchUi({
+    loading,
+    searchQuery,
+    debouncedSearch,
+    isComposing,
+    enabled: listEnabled,
+    loadingMore,
+    resetDeps: [scope, userId],
+  })
 
   const error = actionError ?? (listError
     ? getApiErrorMessage(tErrors, listError, 'fetchToolsFailed')
     : null)
-
-  const isInitialLoad = loading && !initialLoadDone
-  const isSearchPending = searchQuery.trim() !== debouncedSearch
-  const isSearchRefetching = loading && initialLoadDone && !loadingMore
-  const showSearchSpinner = isSearchPending || isSearchRefetching
 
   const handleSave = async (toolData: Partial<ToolLink>) => {
     try {
@@ -229,22 +223,15 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
 
       <div className="mb-6 flex gap-3">
-        <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-          <Input
-            placeholder={t('searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn('pl-9', showSearchSpinner && 'pr-9')}
-            aria-busy={showSearchSpinner}
-          />
-          {showSearchSpinner && (
-            <Loader2
-              className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin"
-              aria-hidden
-            />
-          )}
-        </div>
+        <ListSearchInput
+          className="flex-1"
+          placeholder={t('searchPlaceholder')}
+          value={searchQuery}
+          onChange={setSearchQuery}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
+          showSpinner={showSearchSpinner}
+        />
         {isMine && (
           <Button onClick={handleAdd}>
             <Plus className="size-4" />

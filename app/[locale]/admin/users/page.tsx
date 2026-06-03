@@ -1,19 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Search } from 'lucide-react'
 import { AdminBackLink } from '@/components/admin/AdminBackLink'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { PaginationControls } from '@/components/ui/pagination-controls'
-import { Input } from '@/components/ui/input'
+import { ListSearchInput } from '@/components/ui/list-search-input'
+import {
+  useDebouncedSearch,
+  useListSearchFetchUi,
+} from '@/hooks/use-list-search-ui'
 import { usePaginatedPage } from '@/hooks/use-paginated-page'
 import { PublicUserProfile } from '@/models/user'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { formatDateTime } from '@/lib/format-date'
 import type { Locale } from '@/i18n/routing'
-
-const SEARCH_DEBOUNCE_MS = 300
 
 export default function AdminUsersPage() {
   const t = useTranslations('admin')
@@ -21,16 +21,14 @@ export default function AdminUsersPage() {
   const tProfile = useTranslations('profile')
   const tErrors = useTranslations('errors')
   const locale = useLocale() as Locale
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
+  const {
+    searchQuery,
+    setSearchQuery,
+    debouncedSearch,
+    isComposing,
+    handleCompositionStart,
+    handleCompositionEnd,
+  } = useDebouncedSearch()
 
   const {
     items: users,
@@ -42,6 +40,13 @@ export default function AdminUsersPage() {
   } = usePaginatedPage<PublicUserProfile>({
     basePath: '/api/admin/users',
     search: debouncedSearch,
+  })
+
+  const { isInitialLoad, showSearchSpinner } = useListSearchFetchUi({
+    loading,
+    searchQuery,
+    debouncedSearch,
+    isComposing,
   })
 
   const listError = error
@@ -56,7 +61,7 @@ export default function AdminUsersPage() {
   const totalCount = pagination?.total ?? 0
   const totalPages = pagination?.totalPages ?? 0
 
-  if (loading && users.length === 0) {
+  if (isInitialLoad) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <p className="text-muted-foreground">{tCommon('loading')}</p>
@@ -84,15 +89,14 @@ export default function AdminUsersPage() {
         </p>
       </div>
 
-      <div className="relative">
-        <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-        <Input
-          placeholder={t('searchUsers')}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <ListSearchInput
+        placeholder={t('searchUsers')}
+        value={searchQuery}
+        onChange={setSearchQuery}
+        onCompositionStart={handleCompositionStart}
+        onCompositionEnd={handleCompositionEnd}
+        showSpinner={showSearchSpinner}
+      />
 
       {listError && (
         <p className="text-destructive text-sm" role="alert">

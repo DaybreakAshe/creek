@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { Link } from '@/i18n/navigation'
-import { ExternalLink, Search, Trash2 } from 'lucide-react'
+import { ExternalLink, Trash2 } from 'lucide-react'
 import { AdminBackLink } from '@/components/admin/AdminBackLink'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { formatDateTime } from '@/lib/format-date'
@@ -13,7 +13,12 @@ import { formatFileSize } from '@/lib/format-file-size'
 import { loginRedirectPath } from '@/lib/locale-path'
 import type { GalleryItemRecord } from '@/lib/gallery-types'
 import type { Locale } from '@/i18n/routing'
+import {
+  useDebouncedSearch,
+  useListSearchFetchUi,
+} from '@/hooks/use-list-search-ui'
 import { usePaginatedPage } from '@/hooks/use-paginated-page'
+import { ListSearchInput } from '@/components/ui/list-search-input'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,15 +29,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-
 type GalleryManageScope = 'mine' | 'admin'
 
 interface GalleryManageContentProps {
   scope: GalleryManageScope
 }
-
-const SEARCH_DEBOUNCE_MS = 300
 
 export function GalleryManageContent({ scope }: GalleryManageContentProps) {
   const t = useTranslations('gallery.manage')
@@ -43,21 +44,11 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
   const locale = useLocale() as Locale
   const { data: session, status } = useSession()
 
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<GalleryItemRecord | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -70,6 +61,15 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
   const listEnabled =
     status === 'authenticated' &&
     (scope === 'admin' || Boolean(session?.user?.id))
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    debouncedSearch,
+    isComposing,
+    handleCompositionStart,
+    handleCompositionEnd,
+  } = useDebouncedSearch()
 
   const listQuery = useMemo(
     () =>
@@ -91,6 +91,15 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
     basePath: scope === 'admin' ? '/api/admin/gallery' : '/api/gallery',
     query: listQuery,
     search: debouncedSearch,
+    enabled: listEnabled,
+    resetDeps: [scope, session?.user?.id],
+  })
+
+  const { isInitialLoad, showSearchSpinner } = useListSearchFetchUi({
+    loading,
+    searchQuery,
+    debouncedSearch,
+    isComposing,
     enabled: listEnabled,
     resetDeps: [scope, session?.user?.id],
   })
@@ -178,7 +187,7 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
   const totalCount = pagination?.total ?? 0
   const totalPages = pagination?.totalPages ?? 0
 
-  if (loading || status === 'loading') {
+  if (status === 'loading' || isInitialLoad) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <p className="text-muted-foreground">{tCommon('loading')}</p>
@@ -206,15 +215,14 @@ export function GalleryManageContent({ scope }: GalleryManageContentProps) {
         )}
       </div>
 
-      <div className="relative">
-        <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-        <Input
-          placeholder={t('searchPlaceholder')}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <ListSearchInput
+        placeholder={t('searchPlaceholder')}
+        value={searchQuery}
+        onChange={setSearchQuery}
+        onCompositionStart={handleCompositionStart}
+        onCompositionEnd={handleCompositionEnd}
+        showSpinner={showSearchSpinner}
+      />
 
       {error && (
         <p className="text-destructive text-sm" role="alert">
