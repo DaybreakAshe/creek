@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useSession } from 'next-auth/react'
-import { Plus, Search, UserRound } from 'lucide-react'
+import { Loader2, Plus, Search, UserRound } from 'lucide-react'
 import { canManageTool } from '@/lib/tool-auth'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { loginRedirectPath } from '@/lib/locale-path'
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ToolLink } from '@/models/tool'
+import { cn } from '@/lib/utils'
 
 type ToolsScope = 'public' | 'mine'
 
@@ -47,6 +48,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
 
   const userId = session?.user?.id
   const isMine = scope === 'mine'
@@ -70,6 +72,10 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
     }
   }, [scope, status, locale])
 
+  useEffect(() => {
+    setInitialLoadDone(false)
+  }, [scope, userId])
+
   const listQuery = useMemo(
     () =>
       isMine && userId ? { userId } : {},
@@ -92,9 +98,20 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
     resetDeps: [scope, userId],
   })
 
+  useEffect(() => {
+    if (listEnabled && !loading) {
+      setInitialLoadDone(true)
+    }
+  }, [listEnabled, loading])
+
   const error = actionError ?? (listError
     ? getApiErrorMessage(tErrors, listError, 'fetchToolsFailed')
     : null)
+
+  const isInitialLoad = loading && !initialLoadDone
+  const isSearchPending = searchQuery.trim() !== debouncedSearch
+  const isSearchRefetching = loading && initialLoadDone && !loadingMore
+  const showSearchSpinner = isSearchPending || isSearchRefetching
 
   const handleSave = async (toolData: Partial<ToolLink>) => {
     try {
@@ -176,7 +193,7 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
     setDialogOpen(true)
   }
 
-  if (loading || (isMine && status === 'loading')) {
+  if (isInitialLoad || (isMine && status === 'loading')) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <p className="text-muted-foreground">{tCommon('loading')}</p>
@@ -218,8 +235,15 @@ export function ToolsPageContent({ scope }: ToolsPageContentProps) {
             placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className={cn('pl-9', showSearchSpinner && 'pr-9')}
+            aria-busy={showSearchSpinner}
           />
+          {showSearchSpinner && (
+            <Loader2
+              className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin"
+              aria-hidden
+            />
+          )}
         </div>
         {isMine && (
           <Button onClick={handleAdd}>
