@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useState } from 'react'
+import { useState } from 'react'
 import type { UIMessage } from '@/lib/chat/types'
 import { useTranslations } from 'next-intl'
 import { Check, Copy, RotateCcw } from 'lucide-react'
@@ -23,7 +23,7 @@ interface ChatMessageProps {
   canRegenerate?: boolean
 }
 
-function ChatMessageInner({
+export function ChatMessage({
   message,
   isStreaming,
   onRegenerate,
@@ -72,7 +72,7 @@ function ChatMessageInner({
           </details>
         )}
 
-        <div className="text-foreground [contain:layout]">
+        <div className="text-foreground">
           {showThinking ? (
             <ChatThinkingLabel />
           ) : isUser ? (
@@ -127,15 +127,3 @@ function ChatMessageInner({
   )
 }
 
-function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps): boolean {
-  return (
-    prev.message.id === next.message.id &&
-    getMessageText(prev.message) === getMessageText(next.message) &&
-    getMessageReasoning(prev.message) === getMessageReasoning(next.message) &&
-    prev.isStreaming === next.isStreaming &&
-    prev.canRegenerate === next.canRegenerate &&
-    prev.onRegenerate === next.onRegenerate
-  )
-}
-
-export const ChatMessage = memo(ChatMessageInner, propsAreEqual)

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ChatEmptyState } from '@/components/chat/ChatEmptyState'
 import { ChatPendingReply } from '@/components/chat/ChatPendingReply'
+import { getMessageText } from '@/lib/chat/message-utils'
 
 interface ChatMessageListProps {
   className?: string
@@ -40,8 +41,10 @@ export function ChatMessageList({
   const isBusy = status === 'submitted' || status === 'streaming'
   const awaitingReply = status === 'submitted'
   const lastMessage = messages.at(-1)
-  const lastAssistantId =
-    [...messages].reverse().find((m) => m.role === 'assistant')?.id ?? null
+  const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant')
+  const lastAssistantId = lastAssistant?.id ?? null
+  const streamingAssistantTextLength =
+    isBusy && lastAssistant ? getMessageText(lastAssistant).length : 0
 
   const handleRegenerate = useCallback(() => {
     onRegenerate()
@@ -100,7 +103,14 @@ export function ChatMessageList({
 
   useEffect(() => {
     scrollToBottom(isBusy ? 'auto' : 'smooth')
-  }, [messages.length, status, awaitingReply, isBusy, scrollToBottom])
+  }, [
+    messages.length,
+    status,
+    awaitingReply,
+    isBusy,
+    scrollToBottom,
+    streamingAssistantTextLength,
+  ])
 
   if (messages.length === 0) {
     return <ChatEmptyState onSelect={onSuggestionSelect} className={className} />
@@ -125,15 +135,21 @@ export function ChatMessageList({
           </Button>
         </div>
       )}
-      {messages.map((message) => (
+      {messages.map((message) => {
+        const isStreamingMessage =
+          isBusy &&
+          message.role === 'assistant' &&
+          message.id === lastAssistantId
+
+        return (
         <ChatMessage
-          key={message.id}
-          message={message}
-          isStreaming={
-            isBusy &&
-            message.id === lastMessage?.id &&
-            message.role === 'assistant'
+          key={
+            isStreamingMessage
+              ? `${message.id}-${getMessageText(message).length}`
+              : message.id
           }
+          message={message}
+          isStreaming={isStreamingMessage}
           canRegenerate={
             !isBusy &&
             message.role === 'assistant' &&
@@ -141,7 +157,8 @@ export function ChatMessageList({
           }
           onRegenerate={handleRegenerate}
         />
-      ))}
+        )
+      })}
       {awaitingReply && <ChatPendingReply />}
       <div ref={bottomRef} className="h-px shrink-0" aria-hidden />
     </div>
