@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import type { UIMessage } from '@/lib/chat/types'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { ChatPendingReply } from '@/components/chat/ChatPendingReply'
 import { getMessageText } from '@/lib/chat/message-utils'
 
 interface ChatMessageListProps {
+  chatId: string
   className?: string
   messages: UIMessage[]
   status: 'submitted' | 'streaming' | 'ready' | 'error'
@@ -23,6 +24,7 @@ interface ChatMessageListProps {
 const SCROLL_PIN_THRESHOLD = 96
 
 export function ChatMessageList({
+  chatId,
   className,
   messages,
   status,
@@ -38,6 +40,9 @@ export function ChatMessageList({
   const bottomRef = useRef<HTMLDivElement>(null)
   const pinnedToBottomRef = useRef(true)
   const blockAutoScrollRef = useRef(false)
+  const prevStatusRef = useRef(status)
+  const prevChatIdRef = useRef<string | null>(null)
+  const prevMessagesLengthRef = useRef(0)
   const isBusy = status === 'submitted' || status === 'streaming'
   const awaitingReply = status === 'submitted'
   const lastMessage = messages.at(-1)
@@ -96,20 +101,59 @@ export function ChatMessageList({
     }
   }, [])
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior) => {
-    if (blockAutoScrollRef.current || !pinnedToBottomRef.current) return
-    bottomRef.current?.scrollIntoView({ behavior, block: 'end' })
+  const scrollContainerToBottom = useCallback(() => {
+    const el = listRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
   }, [])
 
-  useEffect(() => {
-    scrollToBottom(isBusy ? 'auto' : 'smooth')
+  const forceScrollToBottom = useCallback(() => {
+    blockAutoScrollRef.current = false
+    pinnedToBottomRef.current = true
+    scrollContainerToBottom()
+  }, [scrollContainerToBottom])
+
+  /** 切换会话：立即定位到最新消息 */
+  useLayoutEffect(() => {
+    if (prevChatIdRef.current === chatId) return
+    prevChatIdRef.current = chatId
+    prevMessagesLengthRef.current = messages.length
+    forceScrollToBottom()
+    const frame = requestAnimationFrame(scrollContainerToBottom)
+    return () => cancelAnimationFrame(frame)
+  }, [chatId, messages.length, forceScrollToBottom, scrollContainerToBottom])
+
+  /** 会话消息首次载入（0 → N） */
+  useLayoutEffect(() => {
+    const prevLen = prevMessagesLengthRef.current
+    prevMessagesLengthRef.current = messages.length
+    if (prevLen === 0 && messages.length > 0) {
+      forceScrollToBottom()
+      const frame = requestAnimationFrame(scrollContainerToBottom)
+      return () => cancelAnimationFrame(frame)
+    }
+  }, [messages.length, forceScrollToBottom, scrollContainerToBottom])
+
+  /** 发送新消息时强制跳到底部；流式回复仅在用户已贴底时跟随 */
+  useLayoutEffect(() => {
+    const userJustSent =
+      status === 'submitted' && prevStatusRef.current === 'ready'
+    prevStatusRef.current = status
+
+    if (userJustSent) {
+      forceScrollToBottom()
+      return
+    }
+
+    if (blockAutoScrollRef.current || !pinnedToBottomRef.current) return
+    scrollContainerToBottom()
   }, [
-    messages.length,
     status,
+    messages.length,
     awaitingReply,
-    isBusy,
-    scrollToBottom,
     streamingAssistantTextLength,
+    forceScrollToBottom,
+    scrollContainerToBottom,
   ])
 
   if (messages.length === 0) {
