@@ -45,83 +45,104 @@ export function ChatMessage({
     window.setTimeout(() => setCopied(false), 2000)
   }
 
+  const bubbleClass = cn(
+    'border-border/60 bg-background rounded-xl border px-3 py-2.5',
+    isUser ? 'bg-muted/30' : 'bg-muted/15'
+  )
+
   return (
     <div
       className={cn(
-        'flex gap-3 px-4 py-5',
-        isUser ? 'bg-transparent' : 'bg-muted/30'
+        'flex px-4 py-3',
+        isUser ? 'justify-end' : 'justify-start'
       )}
     >
-      {isUser ? <ChatUserAvatar /> : <ChatAssistantAvatar />}
-
-      <div className="min-w-0 flex-1 space-y-2">
-        <p className="text-muted-foreground pointer-events-none text-xs font-medium select-none">
-          {isUser ? t('you') : t('assistant')}
-        </p>
-
-        {reasoning && !isStreaming && (
-          <details className="text-muted-foreground text-xs">
-            <summary className="cursor-pointer list-none marker:content-none select-none [&::-webkit-details-marker]:hidden">
-              <span className="hover:text-foreground underline-offset-2 hover:underline">
-                {t('reasoning')}
-              </span>
-            </summary>
-            <p className="mt-2 leading-relaxed whitespace-pre-wrap select-text">
-              {reasoning}
-            </p>
-          </details>
+      <div
+        className={cn(
+          'flex max-w-[min(100%,40rem)] gap-2.5',
+          isUser && 'flex-row-reverse'
         )}
+      >
+        {isUser ? <ChatUserAvatar /> : <ChatAssistantAvatar />}
 
-        <div className="text-foreground">
-          {showThinking ? (
-            <ChatThinkingLabel />
-          ) : isUser ? (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap select-text">
-              {text}
-            </p>
-          ) : (
-            <AssistantMessageContent
-              messageId={message.id}
-              text={text}
-              isStreaming={Boolean(isStreaming)}
-            />
-          )}
-        </div>
+        <div className="min-w-0 space-y-1.5">
+          <p
+            className={cn(
+              'text-muted-foreground pointer-events-none text-xs font-medium select-none',
+              isUser && 'text-right'
+            )}
+          >
+            {isUser ? t('you') : t('assistant')}
+          </p>
 
-        {showActions && (
-          <div className="flex items-center gap-1 pt-0.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1 px-2 text-xs"
-              onClick={handleCopy}
-            >
-              {copied ? (
-                <Check className="size-3.5" />
+          <div className={bubbleClass}>
+            {reasoning && !isStreaming && (
+              <details className="text-muted-foreground mb-2 text-xs">
+                <summary className="cursor-pointer list-none marker:content-none select-none [&::-webkit-details-marker]:hidden">
+                  <span className="hover:text-foreground underline-offset-2 hover:underline">
+                    {t('reasoning')}
+                  </span>
+                </summary>
+                <p className="mt-2 leading-relaxed whitespace-pre-wrap select-text">
+                  {reasoning}
+                </p>
+              </details>
+            )}
+
+            <div className="text-foreground">
+              {showThinking ? (
+                <ChatThinkingLabel />
+              ) : isUser ? (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap select-text">
+                  {text}
+                </p>
               ) : (
-                <Copy className="size-3.5" />
+                <AssistantMessageContent
+                  messageId={message.id}
+                  text={text}
+                  isStreaming={Boolean(isStreaming)}
+                />
               )}
-              {copied ? t('copied') : t('copy')}
-            </Button>
-            {canRegenerate && onRegenerate && !isStreaming && (
+            </div>
+
+            {showUnsupported && (
+              <p className="text-muted-foreground mt-2 text-xs">
+                {t('unsupportedPart')}
+              </p>
+            )}
+          </div>
+
+          {showActions && (
+            <div className="flex items-center gap-1 pt-0.5">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="h-7 gap-1 px-2 text-xs"
-                onClick={onRegenerate}
+                onClick={handleCopy}
               >
-                <RotateCcw className="size-3.5" />
-                {t('regenerate')}
+                {copied ? (
+                  <Check className="size-3.5" />
+                ) : (
+                  <Copy className="size-3.5" />
+                )}
+                {copied ? t('copied') : t('copy')}
               </Button>
-            )}
-          </div>
-        )}
-
-        {showUnsupported && (
-          <p className="text-muted-foreground text-xs">{t('unsupportedPart')}</p>
-        )}
+              {canRegenerate && onRegenerate && !isStreaming && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 px-2 text-xs"
+                  onClick={onRegenerate}
+                >
+                  <RotateCcw className="size-3.5" />
+                  {t('regenerate')}
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

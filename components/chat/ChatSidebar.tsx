@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import type { Locale } from '@/i18n/routing'
-import { MessageSquarePlus, PanelLeftClose, Trash2 } from 'lucide-react'
+import { MessageSquarePlus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -102,18 +102,6 @@ export function ChatSidebar({
             <MessageSquarePlus className="size-4" />
             {t('newChat')}
           </Button>
-          {onClose && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="shrink-0 md:hidden"
-              onClick={onClose}
-              aria-label={t('closeSidebar')}
-            >
-              <PanelLeftClose className="size-4" />
-            </Button>
-          )}
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
@@ -135,16 +123,24 @@ export function ChatSidebar({
                 return (
                   <li key={session.id}>
                     <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onSelect(session.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          onSelect(session.id)
+                        }
+                      }}
                       className={cn(
-                        'group flex items-center gap-1 rounded-lg pr-1',
+                        'group flex cursor-pointer items-center gap-0.5 rounded-lg px-2 py-1.5 transition-colors',
+                        'hover:bg-sidebar-accent',
                         active && 'bg-sidebar-accent'
                       )}
                     >
-                      <button
-                        type="button"
-                        onClick={() => onSelect(session.id)}
+                      <div
                         className={cn(
-                          'hover:bg-sidebar-accent/80 min-w-0 flex-1 rounded-lg px-3 py-2.5 text-left transition-colors',
+                          'min-w-0 flex-1 px-1 py-1 text-left',
                           active && 'font-medium'
                         )}
                       >
@@ -152,17 +148,21 @@ export function ChatSidebar({
                         <span className="text-muted-foreground mt-0.5 block text-xs">
                           {formatRelativeTime(session.updatedAt, dateLocale)}
                         </span>
-                      </button>
-                      <Button
+                      </div>
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 shrink-0 opacity-0 group-hover:opacity-100"
-                        onClick={() => handleDeleteRequest(session)}
+                        className={cn(
+                          'text-muted-foreground hover:text-destructive flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md opacity-0 transition-opacity',
+                          'group-hover:opacity-100 focus-visible:opacity-100'
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteRequest(session)
+                        }}
                         aria-label={t('deleteChat')}
                       >
                         <Trash2 className="size-3.5" />
-                      </Button>
+                      </button>
                     </div>
                   </li>
                 )
