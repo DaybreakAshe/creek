@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ChatEmptyState } from '@/components/chat/ChatEmptyState'
 import { ChatPendingReply } from '@/components/chat/ChatPendingReply'
+import { chatMessagesColumnClass } from '@/components/chat/chat-layout'
 import { getMessageText } from '@/lib/chat/message-utils'
 
 interface ChatMessageListProps {
@@ -165,46 +166,48 @@ export function ChatMessageList({
       ref={listRef}
       className={`flex min-h-0 flex-col overflow-y-auto overscroll-contain ${className ?? 'flex-1'}`.trim()}
     >
-      {hasEarlierMessages && onLoadEarlier && (
-        <div className="flex justify-center px-4 py-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-xs"
-            disabled={loadingEarlier}
-            onClick={onLoadEarlier}
-          >
-            {loadingEarlier ? tCommon('loadingMore') : t('loadEarlierMessages')}
-          </Button>
-        </div>
-      )}
-      {messages.map((message) => {
-        const isStreamingMessage =
-          isBusy &&
-          message.role === 'assistant' &&
-          message.id === lastAssistantId
-
-        return (
-        <ChatMessage
-          key={
-            isStreamingMessage
-              ? `${message.id}-${getMessageText(message).length}`
-              : message.id
-          }
-          message={message}
-          isStreaming={isStreamingMessage}
-          canRegenerate={
-            !isBusy &&
+      <div className={chatMessagesColumnClass('flex flex-col')}>
+        {hasEarlierMessages && onLoadEarlier && (
+          <div className="flex justify-center py-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-xs"
+              disabled={loadingEarlier}
+              onClick={onLoadEarlier}
+            >
+              {loadingEarlier ? tCommon('loadingMore') : t('loadEarlierMessages')}
+            </Button>
+          </div>
+        )}
+        {messages.map((message) => {
+          const isStreamingMessage =
+            isBusy &&
             message.role === 'assistant' &&
             message.id === lastAssistantId
-          }
-          onRegenerate={handleRegenerate}
-        />
-        )
-      })}
-      {awaitingReply && <ChatPendingReply />}
-      <div ref={bottomRef} className="h-px shrink-0" aria-hidden />
+
+          return (
+            <ChatMessage
+              key={
+                isStreamingMessage
+                  ? `${message.id}-${getMessageText(message).length}`
+                  : message.id
+              }
+              message={message}
+              isStreaming={isStreamingMessage}
+              canRegenerate={
+                !isBusy &&
+                message.role === 'assistant' &&
+                message.id === lastAssistantId
+              }
+              onRegenerate={handleRegenerate}
+            />
+          )
+        })}
+        {awaitingReply && <ChatPendingReply />}
+        <div ref={bottomRef} className="h-px shrink-0" aria-hidden />
+      </div>
     </div>
   )
 }

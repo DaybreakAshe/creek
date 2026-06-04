@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { GeminiChatModelOption } from '@/lib/ai/gemini-models'
+import { chatInputColumnClass } from '@/components/chat/chat-layout'
 
 const INPUT_MIN_HEIGHT = 56
 const INPUT_MAX_HEIGHT = 200
@@ -73,7 +74,9 @@ export function ChatInput({
   return (
     <div className="p-3 backdrop-blur sm:p-4">
       <form
-        className="bg-card border-input mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border p-2 shadow-sm"
+        className={chatInputColumnClass(
+          'bg-card border-input flex flex-col gap-2 rounded-2xl border p-2 shadow-sm'
+        )}
         onSubmit={(e) => {
           e.preventDefault()
           if (canSend) onSubmit()

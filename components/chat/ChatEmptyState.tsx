@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes'
 import { Sparkles } from 'lucide-react'
 import Threads from '@/components/Threads'
 import { Button } from '@/components/ui/button'
+import { chatMessagesColumnClass } from '@/components/chat/chat-layout'
 
 interface ChatEmptyStateProps {
   onSelect: (text: string) => void
@@ -39,7 +40,11 @@ export function ChatEmptyState({ onSelect, className }: ChatEmptyStateProps) {
         amplitude={1}
         distance={0.2}
       />
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-6 px-6 py-12 text-center">
+      <div
+        className={chatMessagesColumnClass(
+          'relative z-10 flex flex-1 flex-col items-center justify-center gap-6 py-12 text-center'
+        )}
+      >
         <div className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl">
           <Sparkles className="size-7" />
         </div>
