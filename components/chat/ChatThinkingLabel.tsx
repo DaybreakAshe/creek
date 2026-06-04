@@ -13,7 +13,7 @@ export function ChatThinkingLabel({ className }: ChatThinkingLabelProps) {
 
   return (
     <p
-      className={cn('text-muted-foreground text-sm', className)}
+      className={cn('text-muted-foreground text-xs', className)}
       aria-live="polite"
       aria-busy="true"
     >

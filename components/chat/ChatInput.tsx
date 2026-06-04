@@ -75,7 +75,7 @@ export function ChatInput({
     <div className="p-3 backdrop-blur sm:p-4">
       <form
         className={chatInputColumnClass(
-          'bg-card border-input flex flex-col gap-2 rounded-2xl border p-2 shadow-sm'
+          'bg-card border-input flex flex-col gap-2 rounded-2xl border p-2'
         )}
         onSubmit={(e) => {
           e.preventDefault()
@@ -100,7 +100,7 @@ export function ChatInput({
           }}
           onKeyDown={handleKeyDown}
           className={cn(
-            'placeholder:text-muted-foreground max-h-[200px] min-h-14 resize-none bg-transparent px-2 text-sm leading-6 outline-none transition-[height] duration-150 ease-out',
+            'placeholder:text-muted-foreground max-h-[200px] min-h-14 resize-none bg-transparent px-2 text-sm leading-6 transition-[height] duration-150 ease-out outline-none',
             'disabled:cursor-not-allowed disabled:opacity-50'
           )}
         />
@@ -122,7 +122,10 @@ export function ChatInput({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-[12rem]">
               <DropdownMenuLabel>{t('modelSelect')}</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={modelId} onValueChange={onModelChange}>
+              <DropdownMenuRadioGroup
+                value={modelId}
+                onValueChange={onModelChange}
+              >
                 {models.map((option) => (
                   <DropdownMenuRadioItem key={option.id} value={option.id}>
                     {option.name}

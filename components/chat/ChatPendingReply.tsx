@@ -12,8 +12,10 @@ export function ChatPendingReply() {
       <div className="flex max-w-[min(100%,40rem)] gap-2.5">
         <ChatAssistantAvatar />
         <div className="min-w-0 space-y-1.5">
-          <p className="text-muted-foreground text-xs font-medium">{t('assistant')}</p>
-          <div className="border-border/60 bg-muted/15 rounded-xl border px-3 py-2.5 shadow-sm">
+          <p className="text-muted-foreground text-xs font-medium">
+            {t('assistant')}
+          </p>
+          <div className="bg-muted/15 rounded-xl pb-2.5">
             <ChatThinkingLabel />
           </div>
         </div>
